@@ -272,40 +272,40 @@
         spg: {
             main: {
                 president: [
-                    {id:"sp1", name:"Sophia Francesca R. Magtoto", party:"Shine", img:"images/Shine/magtoto.jpg"},
-                    {id:"sp2", name:"Cristina Isabelle G. Sisneros", party:"Power", img:"images/Power/sisneros.jpg"}
+                    {id:"sp1", name:"Sophia Francesca R. Magtoto", party:"Shine", img:"assets/Shine/President-Sophia Francesca Medium.png"},
+                    {id:"sp2", name:"Cristina Isabelle G. Sisneros", party:"Power", img:"assets/Power/President-Cristina Medium.png"}
                 ],
                 vp: [
-                    {id:"svp1", name:"Sabryna Adriel Catigbe", party:"Shine", img:"images/Shine/catigbe.jpg"},
-                    {id:"svp2", name:"Sofia Allysa R. Malones", party:"Power", img:"images/Power/malones.jpg"}
+                    {id:"svp1", name:"Sabryna Adriel Catigbe", party:"Shine", img:"assets/Shine/Vice president-Sabryna Medium.png"},
+                    {id:"svp2", name:"Sofia Allysa R. Malones", party:"Power", img:"assets/Power/Vice president- Sofia Medium.png"}
                 ],
                 secretary: [
-                    {id:"ssec1", name:"Jerard Marco M. Mira", party:"Shine", img:"images/Shine/mira.jpg"},
-                    {id:"ssec2", name:"Caitlyn Gale C. Torres", party:"Power", img:"images/Power/torres.jpg"}
+                    {id:"ssec1", name:"Jerard Marco M. Mira", party:"Shine", img:"assets/Shine/SECRETARY-JERARD MARCO Medium.png"},
+                    {id:"ssec2", name:"Caitlyn Gale C. Torres", party:"Power", img:"assets/Power/Secretary-Caitlyn Medium.png"}
                 ],
                 treasurer: [
-                    {id:"stre1", name:"Seab Gabriel S. Ragay", party:"Shine", img:"images/Shine/ragay.jpg"},
-                    {id:"stre2", name:"Therish Gabrella A. Barot", party:"Power", img:"images/Power/barot.jpg"}
+                    {id:"stre1", name:"Seab Gabriel S. Ragay", party:"Shine", img:"assets/Shine/Treasurer-Sean Gabriel Medium.png"},
+                    {id:"stre2", name:"Therish Gabrella A. Barot", party:"Power", img:"assets/Power/Treasurer-Therish Medium.png"}
                 ],
                 auditor: [
-                    {id:"saud1", name:"Kaylie N. Credo", party:"Shine", img:"images/Shine/credo.jpg"},
-                    {id:"saud2", name:"Kris Nathan Jay B. Bungart", party:"Power", img:"images/Power/bungart.jpg"}
+                    {id:"saud1", name:"Kaylie N. Credo", party:"Shine", img:"assets/Shine/Auditor-Kaylie Medium.png"},
+                    {id:"saud2", name:"Kris Nathan Jay B. Bungart", party:"Power", img:"assets/Power/Auditor-Kris nathan Medium.png"}
                 ],
                 internalPio: [
-                    {id:"sint1", name:"Jayzleen Kate V. Boiser", party:"Shine", img:"images/Shine/boiser.jpg"},
-                    {id:"sint2", name:"Katelyn K. Nellas", party:"Power", img:"images/Power/nellas.jpg"}
+                    {id:"sint1", name:"Jayzleen Kate V. Boiser", party:"Shine", img:"assets/Shine/PIO-INTERNAL-Jayzleen- Medium.png"},
+                    {id:"sint2", name:"Katelyn K. Nellas", party:"Power", img:"assets/Power/Pio Internal-Katelyn Medium.png"}
                 ],
                 peace: [
                     {id:"spea1", name:"Amber Gold V. Tabangan", party:"Shine", img:"images/Shine/tabangan.jpg"},
-                    {id:"spea2", name:"John Lorcan Mondejar", party:"Shine", img:"images/Shine/mondejar.jpg"},
-                    {id:"spea3", name:"Vnn Andrz S. Nalam", party:"Power", img:"images/Power/nalam.jpg"},
-                    {id:"spea4", name:"Ghaven Joey N. Locsin", party:"Power", img:"images/Power/locsin.jpg"}
+                    {id:"spea2", name:"John Lorcan Mondejar", party:"Shine", img:"assets/Shine/Peace officer-JohnLorcan Medium.png"},
+                    {id:"spea3", name:"Vnn Andrz S. Nalam", party:"Power", img:"assets/Power/PIO External- Vnn Medium.png"},
+                    {id:"spea4", name:"Ghaven Joey N. Locsin", party:"Power", img:"assets/Power/Peace Officer- Ghaven Medium.png"}
                 ]
             },
             gradeReps: {
-                4: [{id:"gr41", name:"Trystam Evoe Lacson", party:"Shine", img:"images/Shine/lacson.jpg"}, {id:"gr42", name:"Sapphire Dawn O. Ruiz", party:"Power", img:"images/Power/ruiz.jpg"}],
-                5: [{id:"gr51", name:"Curt Joshua B. Cimafranca", party:"Shine", img:"images/Shine/cimafranca.jpg"}, {id:"gr52", name:"Azalie Nicole T. Egera", party:"Power", img:"images/Power/egera.jpg"}],
-                6: [{id:"gr61", name:"Carylle Von O. Opsima", party:"Shine", img:"images/Shine/opsima.jpg"}, {id:"gr62", name:"Rain Benedict C. Canlas", party:"Power", img:"images/Power/canlas.jpg"}]
+                4: [{id:"gr41", name:"Trystam Evoe Lacson", party:"Shine", img:"assets/Shine/Grade 4 Representative-Trystam Medium.png"}, {id:"gr42", name:"Sapphire Dawn O. Ruiz", party:"Power", img:"images/Power/ruiz.jpg"}],
+                5: [{id:"gr51", name:"Curt Joshua B. Cimafranca", party:"Shine", img:"assets/Shine/Grade 5 rep Joshua Medium.png"}, {id:"gr52", name:"Azalie Nicole T. Egera", party:"Power", img:"assets/Power/Grade 4 Representative-Azalie Medium.png"}],
+                6: [{id:"gr61", name:"Carylle Von O. Opsima", party:"Shine", img:"assets/Shine/Grade 6 representative- Carylle Von Medium.png"}, {id:"gr62", name:"Rain Benedict C. Canlas", party:"Power", img:"assets/Power/Grade 6 Representative-Rain Medium.png"}]
             }
         }
     };
@@ -361,6 +361,8 @@
 
     function createCard(c, type, name, showImage = true) {
         if (!c) return '';
+        const fallbackImg = 'assets/Polaris/fpa.jpg';
+        const candidateImg = c.img || fallbackImg;
         
         let ringColor, badgeBg, badgeText;
         if (c.party === "Polaris Party") {
@@ -389,7 +391,7 @@
         return `
         <label class="ballot-card bg-white border-2 border-transparent rounded-3xl p-5 cursor-pointer flex gap-5 items-start">
             <input type="${type}" name="${name}" value="${c.id}" class="mt-1.5 accent-red-600">
-            ${showImage ? `<img src="${c.img}" class="w-20 h-20 rounded-2xl object-cover ring-2 ${ringColor}">` : ''}
+            ${showImage ? `<img src="${candidateImg}" onerror="this.onerror=null;this.src='${fallbackImg}'" class="w-20 h-20 rounded-2xl object-cover ring-2 ${ringColor}">` : ''}
             <div class="flex-1">
                 <h4 class="font-semibold text-lg">${c.name}</h4>
                 <span class="inline-block px-3 py-1 text-xs font-medium rounded-full ${badgeBg} ${badgeText}">${c.party}</span>
@@ -403,7 +405,7 @@
         return `
         <label class="ballot-card bg-white border-2 border-dashed border-slate-300 rounded-3xl p-5 cursor-pointer flex gap-5 items-start">
             <input type="radio" name="${name}" value="${abstainToken}" class="mt-1.5 accent-slate-500">
-            <div class="w-20 h-20 rounded-2xl bg-slate-100 flex items-center justify-center text-3xl text-slate-500">∅</div>
+            <img src="assets/Polaris/abstain.jpg" class="w-20 h-20 rounded-2xl object-cover ring-2 ring-slate-300">
             <div class="flex-1">
                 <h4 class="font-semibold text-lg">ABSTAIN</h4>
                 <span class="inline-block px-3 py-1 text-xs font-medium rounded-full bg-slate-100 text-slate-700">No vote for this position</span>
@@ -425,7 +427,7 @@
         badge.className = `px-6 py-2 rounded-3xl text-white font-semibold bg-red-800`;
 
         let html = isSPG ? 
-            `<h2 class="text-2xl font-semibold mb-6 flex items-center gap-3"><img src="images/Shine/magtoto.jpg" class="w-8 h-8 rounded object-cover"> SPG Positions</h2>` : 
+            `<h2 class="text-2xl font-semibold mb-6 flex items-center gap-3"><img src="assets/Shine/President-Sophia Francesca Medium.png" class="w-8 h-8 rounded object-cover"> SPG Positions</h2>` : 
             `<h2 class="text-2xl font-semibold mb-6 flex items-center gap-3"><img src="assets/Polaris/fpa.jpg" class="w-8 h-8 rounded object-cover"> SSG Positions</h2>`;
 
         if (isSPG) {
