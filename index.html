@@ -284,7 +284,7 @@
                     {id:"ssec2", name:"Caitlyn Gale C. Torres", party:"Power", img:"assets/Power/Secretary-Caitlyn Medium.png"}
                 ],
                 treasurer: [
-                    {id:"stre1", name:"Seab Gabriel S. Ragay", party:"Shine", img:"assets/Shine/Treasurer-Sean Gabriel Medium.png"},
+                    {id:"stre1", name:"Sean Gabriel S. Ragay", party:"Shine", img:"assets/Shine/Treasurer-Sean Gabriel Medium.png"},
                     {id:"stre2", name:"Therish Gabrella A. Barot", party:"Power", img:"assets/Power/Treasurer-Therish Medium.png"}
                 ],
                 auditor: [
@@ -293,12 +293,12 @@
                 ],
                 internalPio: [
                     {id:"sint1", name:"Jayzleen Kate V. Boiser", party:"Shine", img:"assets/Shine/PIO-INTERNAL-Jayzleen- Medium.png"},
-                    {id:"sint2", name:"Katelyn K. Nellas", party:"Power", img:"assets/Power/Pio Internal-Katelyn Medium.png"}
+                    {id:"sint3", name:"Amber Gold V. Tabangan", party:"Shine", img:"images/Shine/tabangan.jpg"},
+                    {id:"sint2", name:"Katelyn K. Nellas", party:"Power", img:"assets/Power/Pio Internal-Katelyn Medium.png"},
+                    {id:"sint4", name:"Vnn Andrz S. Nalam", party:"Power", img:"assets/Power/PIO External- Vnn Medium.png"}
                 ],
                 peace: [
-                    {id:"spea1", name:"Amber Gold V. Tabangan", party:"Shine", img:"images/Shine/tabangan.jpg"},
                     {id:"spea2", name:"John Lorcan Mondejar", party:"Shine", img:"assets/Shine/Peace officer-JohnLorcan Medium.png"},
-                    {id:"spea3", name:"Vnn Andrz S. Nalam", party:"Power", img:"assets/Power/PIO External- Vnn Medium.png"},
                     {id:"spea4", name:"Ghaven Joey N. Locsin", party:"Power", img:"assets/Power/Peace Officer- Ghaven Medium.png"}
                 ]
             },
@@ -390,7 +390,7 @@
         
         return `
         <label class="ballot-card bg-white border-2 border-transparent rounded-3xl p-5 cursor-pointer flex gap-5 items-start">
-            <input type="${type}" name="${name}" value="${c.id}" class="mt-1.5 accent-red-600">
+            <input type="${type}" name="${name}" value="${c.id}" data-party="${c.party}" class="mt-1.5 accent-red-600">
             ${showImage ? `<img src="${candidateImg}" onerror="this.onerror=null;this.src='${fallbackImg}'" class="w-20 h-20 rounded-2xl object-cover ring-2 ${ringColor}">` : ''}
             <div class="flex-1">
                 <h4 class="font-semibold text-lg">${c.name}</h4>
@@ -432,10 +432,11 @@
 
         if (isSPG) {
             Object.keys(candidatesData.spg.main).forEach(pos => {
-                const inputType = pos === 'peace' ? 'checkbox' : 'radio';
-                const maxText = pos === 'peace' ? ' <span class="text-slate-500">(max 2)</span>' : '';
-                html += `<div class="mb-10"><h3 class="text-xl font-medium mb-4 capitalize">${pos}${maxText}</h3><div class="grid grid-cols-1 md:grid-cols-2 gap-6" id="${pos === 'peace' ? 'peace-container' : ''}">`;
-                candidatesData.spg.main[pos].forEach(c => html += createCard(c, inputType, `spg-${pos}`, false));
+                const inputType = (pos === 'peace' || pos === 'internalPio') ? 'checkbox' : 'radio';
+                const maxText = (pos === 'peace' || pos === 'internalPio') ? ' <span class="text-slate-500">(max 2)</span>' : '';
+                const displayName = pos === 'peace' ? 'Peace Officer' : (pos === 'internalPio' ? 'PIO' : pos.charAt(0).toUpperCase() + pos.slice(1));
+                html += `<div class="mb-10"><h3 class="text-xl font-medium mb-4">${displayName}${maxText}</h3><div class="grid grid-cols-1 md:grid-cols-2 gap-6" id="${pos === 'peace' ? 'peace-container' : (pos === 'internalPio' ? 'pio-container' : '')}">`;
+                candidatesData.spg.main[pos].forEach(c => html += createCard(c, inputType, `spg-${pos}`));
                 html += createAbstainCard(inputType, `spg-${pos}`);
                 html += `</div></div>`;
             });
@@ -534,9 +535,27 @@
             peaceContainer.addEventListener('change', (e) => {
                 if (e.target.type === 'checkbox') {
                     const checked = peaceContainer.querySelectorAll('input[type="checkbox"]:checked');
+                    const selectedParties = new Set(Array.from(checked).map(input => input.dataset.party));
                     if (checked.length > 2) {
                         e.target.checked = false;
                         alert("You can only select a maximum of 2 peace officers.");
+                    } else if (selectedParties.size < checked.length) {
+                        e.target.checked = false;
+                        alert("You can only select 1 peace officer per party.");
+                    }
+                }
+            });
+        }
+
+        // For SPG PIO (checkboxes, max 2)
+        const pioContainer = document.getElementById('pio-container');
+        if (pioContainer) {
+            pioContainer.addEventListener('change', (e) => {
+                if (e.target.type === 'checkbox') {
+                    const checked = pioContainer.querySelectorAll('input[type="checkbox"]:checked');
+                    if (checked.length > 2) {
+                        e.target.checked = false;
+                        alert("You can only select a maximum of 2 PIO candidates.");
                     }
                 }
             });
@@ -571,7 +590,11 @@
                 spgSecretary: formData.get('spg-secretary'),
                 spgTreasurer: formData.get('spg-treasurer'),
                 spgAuditor: formData.get('spg-auditor'),
-                spgInternalPio: formData.get('spg-internalPio'),
+                spgPio: Array.from(formData.keys())
+                    .filter(k => k === 'spg-internalPio')
+                    .map(k => formData.getAll(k))
+                    .flat()
+                    .filter(Boolean),
                 spgPeace: Array.from(formData.keys())
                     .filter(k => k === 'spg-peace')
                     .map(k => formData.getAll(k))
@@ -797,12 +820,15 @@
             html += `<div class="space-y-8">`;
             
             Object.keys(data.main).forEach(pos => {
-                const displayName = pos.charAt(0).toUpperCase() + pos.slice(1);
+                const displayName = pos === 'peace' ? 'Peace Officer' : (pos === 'internalPio' ? 'PIO' : pos.charAt(0).toUpperCase() + pos.slice(1));
                 html += `<div><h4 class="text-xl font-semibold mb-4">${displayName}</h4><div class="space-y-3">`;
                 visibleCandidates(data.main[pos]).forEach(candidate => {
                     const votes = allVotesData.filter(v => {
                         if (pos === 'peace') {
                             return Array.isArray(v.spgPeace) && v.spgPeace.includes(candidate.id);
+                        }
+                        if (pos === 'internalPio') {
+                            return Array.isArray(v.spgPio) && v.spgPio.includes(candidate.id);
                         }
                         return v[`spg${pos.charAt(0).toUpperCase()}${pos.slice(1)}`] === candidate.id;
                     }).length;
@@ -812,7 +838,12 @@
                         <div class="h-2 bg-slate-200 rounded"><div class="bar h-full ${color}" style="width:${percentage}%"></div></div>`;
                 });
                 if (pos !== 'peace') {
-                    const votes = allVotesData.filter(v => v[`spg${pos.charAt(0).toUpperCase()}${pos.slice(1)}`] === `abstain:spg-${pos}`).length;
+                    const votes = allVotesData.filter(v => {
+                        if (pos === 'internalPio') {
+                            return Array.isArray(v.spgPio) && v.spgPio.includes(`abstain:spg-${pos}`);
+                        }
+                        return v[`spg${pos.charAt(0).toUpperCase()}${pos.slice(1)}`] === `abstain:spg-${pos}`;
+                    }).length;
                     const percentage = allVotesData.length ? (votes / allVotesData.length * 100).toFixed(1) : 0;
                     html += `<div class="flex justify-between items-center"><span>ABSTAIN</span><span>${votes}</span></div>
                         <div class="h-2 bg-slate-200 rounded"><div class="bar h-full bg-slate-500" style="width:${percentage}%"></div></div>`;
