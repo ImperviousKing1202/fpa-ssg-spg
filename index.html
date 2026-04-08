@@ -240,9 +240,14 @@
     }
 
     async function checkIfAdmin() {
-        const snap = await getDoc(doc(db, "admins", currentUser.email));
-        isAdminUser = snap.exists();
-        if (isAdminUser) document.getElementById('admin-btn').classList.remove('hidden');
+        try {
+            const snap = await getDoc(doc(db, "admins", currentUser.email));
+            isAdminUser = snap.exists();
+            if (isAdminUser) document.getElementById('admin-btn').classList.remove('hidden');
+        } catch (error) {
+            console.warn("Admin check failed (possibly offline):", error);
+            // Don't show admin button if we can't verify admin status
+        }
     }
 
     function populateGradeSelector() {
@@ -441,7 +446,12 @@
             alert("✅ Vote submitted successfully!");
             showConfetti();
         } catch (err) {
-            alert("Error: " + err.message);
+            console.error("Vote submission error:", err);
+            if (err.code === 'unavailable' || err.message.includes('offline')) {
+                alert("❌ You're currently offline. Please check your internet connection and try again.");
+            } else {
+                alert("Error: " + err.message);
+            }
         }
     }
 
@@ -515,7 +525,11 @@
             loadLiveResults();
         } catch (error) {
             console.error("Error resetting votes:", error);
-            alert("❌ Error resetting votes: " + error.message);
+            if (error.code === 'unavailable' || error.message.includes('offline')) {
+                alert("❌ Cannot reset votes while offline. Please check your internet connection.");
+            } else {
+                alert("❌ Error resetting votes: " + error.message);
+            }
         }
     }
 
