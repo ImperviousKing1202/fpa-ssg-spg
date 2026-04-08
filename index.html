@@ -282,8 +282,10 @@
 
         if (isSPG) {
             Object.keys(candidatesData.spg.main).forEach(pos => {
-                html += `<div class="mb-10"><h3 class="text-xl font-medium mb-4 capitalize">${pos}</h3><div class="grid grid-cols-1 md:grid-cols-2 gap-6">`;
-                candidatesData.spg.main[pos].forEach(c => html += createCard(c, 'radio', `spg-${pos}`));
+                const inputType = pos === 'peace' ? 'checkbox' : 'radio';
+                const maxText = pos === 'peace' ? ' <span class="text-slate-500">(max 2)</span>' : '';
+                html += `<div class="mb-10"><h3 class="text-xl font-medium mb-4 capitalize">${pos}${maxText}</h3><div class="grid grid-cols-1 md:grid-cols-2 gap-6" id="${pos === 'peace' ? 'peace-container' : ''}">`;
+                candidatesData.spg.main[pos].forEach(c => html += createCard(c, inputType, `spg-${pos}`));
                 html += `</div></div>`;
             });
         } else {
@@ -316,16 +318,18 @@
             });
         }
 
-        // Grade Reps (max 2) for next grade
+        // Grade Reps for next grade
         const repsGrade = nextGrade;
         if (repsGrade <= 12) {
+            const repsInputType = isSPG ? 'radio' : 'checkbox';
+            const repsMaxText = isSPG ? '' : ' <span class="text-slate-500">(max 2)</span>';
             html += `
             <div>
-                <h3 class="text-xl font-medium mb-4">Grade ${repsGrade} Representatives <span class="text-slate-500">(max 2)</span></h3>
+                <h3 class="text-xl font-medium mb-4">Grade ${repsGrade} Representatives${repsMaxText}</h3>
                 <div id="reps-container" class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     ${(isSPG ? candidatesData.spg.gradeReps[repsGrade] : candidatesData.ssg.gradeReps[repsGrade] || [])
                         .filter(c => c !== null)
-                        .map(c => createCard(c, 'checkbox', `rep-${isSPG ? 'spg' : 'ssg'}-${repsGrade}`))
+                        .map(c => createCard(c, repsInputType, `rep-${isSPG ? 'spg' : 'ssg'}-${repsGrade}`))
                         .join('')}
                 </div>
             </div>`;
@@ -336,17 +340,33 @@
     }
 
     function enforceMaxTwoVotes() {
-        const container = document.getElementById('reps-container');
-        if (!container) return;
-        container.addEventListener('change', (e) => {
-            if (e.target.type === 'checkbox') {
-                const checked = container.querySelectorAll('input[type="checkbox"]:checked');
-                if (checked.length > 2) {
-                    e.target.checked = false;
-                    alert("You can only select a maximum of 2 representatives.");
+        // For SSG grade reps (checkboxes, max 2)
+        const repsContainer = document.getElementById('reps-container');
+        if (repsContainer && !repsContainer.querySelector('input[type="radio"]')) {
+            repsContainer.addEventListener('change', (e) => {
+                if (e.target.type === 'checkbox') {
+                    const checked = repsContainer.querySelectorAll('input[type="checkbox"]:checked');
+                    if (checked.length > 2) {
+                        e.target.checked = false;
+                        alert("You can only select a maximum of 2 representatives.");
+                    }
                 }
-            }
-        });
+            });
+        }
+
+        // For SPG peace officers (checkboxes, max 2)
+        const peaceContainer = document.getElementById('peace-container');
+        if (peaceContainer) {
+            peaceContainer.addEventListener('change', (e) => {
+                if (e.target.type === 'checkbox') {
+                    const checked = peaceContainer.querySelectorAll('input[type="checkbox"]:checked');
+                    if (checked.length > 2) {
+                        e.target.checked = false;
+                        alert("You can only select a maximum of 2 peace officers.");
+                    }
+                }
+            });
+        }
     }
 
     async function submitVote(e) {
@@ -354,20 +374,35 @@
         if (!selectedGrade) return alert("Please select your grade level.");
 
         const formData = new FormData(document.getElementById('ballot-form'));
+        const isSPG = (selectedGrade + 1) <= 6;
         const voteData = {
             userId: currentUser.uid,
             email: currentUser.email,
             grade: selectedGrade,
             timestamp: serverTimestamp(),
-            ssgPresident: formData.get('ssg-president'),
-            ssgVpJhs: formData.get('ssg-vp-jhs'),
-            ssgVpShs: formData.get('ssg-vp-shs'),
-            ssgSecretary: formData.get('ssg-secretary'),
-            ssgTreasurer: formData.get('ssg-treasurer'),
-            ssgAuditor: formData.get('ssg-auditor'),
-            ssgPeace: formData.get('ssg-peace'),
-            ssgInternalPio: formData.get('ssg-internalPio'),
-            ssgExternalPio: formData.get('ssg-externalPio'),
+            ...(isSPG ? {
+                spgPresident: formData.get('spg-president'),
+                spgVp: formData.get('spg-vp'),
+                spgSecretary: formData.get('spg-secretary'),
+                spgTreasurer: formData.get('spg-treasurer'),
+                spgAuditor: formData.get('spg-auditor'),
+                spgInternalPio: formData.get('spg-internalPio'),
+                spgPeace: Array.from(formData.keys())
+                    .filter(k => k === 'spg-peace')
+                    .map(k => formData.getAll(k))
+                    .flat()
+                    .filter(Boolean)
+            } : {
+                ssgPresident: formData.get('ssg-president'),
+                ssgVpJhs: formData.get('ssg-vp-jhs'),
+                ssgVpShs: formData.get('ssg-vp-shs'),
+                ssgSecretary: formData.get('ssg-secretary'),
+                ssgTreasurer: formData.get('ssg-treasurer'),
+                ssgAuditor: formData.get('ssg-auditor'),
+                ssgPeace: formData.get('ssg-peace'),
+                ssgInternalPio: formData.get('ssg-internalPio'),
+                ssgExternalPio: formData.get('ssg-externalPio')
+            }),
             gradeReps: Array.from(formData.keys())
                 .filter(k => k.startsWith('rep-'))
                 .map(k => formData.get(k))
