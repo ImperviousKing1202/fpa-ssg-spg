@@ -151,6 +151,14 @@
     // Native radios can't be unchecked by clicking them again, so we emulate it
     // and re-dispatch a change event so any existing listeners still run.
     function setupRadioUnselectToggle() {
+        const resolveRadioFromEventTarget = (target) => {
+            if (!(target instanceof Element)) return null;
+            const directRadio = target.closest('input[type="radio"]');
+            if (directRadio) return directRadio;
+            const label = target.closest('label');
+            return label ? label.querySelector('input[type="radio"]') : null;
+        };
+
         const markWasChecked = (radio) => {
             if (!(radio instanceof HTMLInputElement)) return;
             if (radio.type !== 'radio') return;
@@ -158,7 +166,7 @@
         };
 
         document.addEventListener('pointerdown', (e) => {
-            const radio = e.target?.closest?.('input[type="radio"]');
+            const radio = resolveRadioFromEventTarget(e.target);
             if (radio) markWasChecked(radio);
         }, true);
 
@@ -170,7 +178,7 @@
         }, true);
 
         document.addEventListener('click', (e) => {
-            const radio = e.target?.closest?.('input[type="radio"]');
+            const radio = resolveRadioFromEventTarget(e.target);
             if (!radio) return;
 
             if (radio.dataset.wasChecked === 'true') {
@@ -200,7 +208,6 @@
             },
             secretary: {
                 jhs: [
-                    {id:"jsec1", name:"ED CHELSY B EDRIAL", party:"Polaris Party", img:"images/Polaris/edrial.jpg"},
                     {id:"jsec2", name:"Chelsea Reyes", party:"Wisely Party", img:"images/Wisely/secretary.jpg"}
                 ],
                 shs: [
@@ -210,7 +217,6 @@
             },
             treasurer: {
                 jhs: [
-                    {id:"jtre1", name:"WAYNE DUHAYLUNGSOD", party:"Polaris Party", img:"images/Polaris/duhaylungsod.jpg"},
                     {id:"jtre2", name:"Yusof Jassim O. Romas", party:"Wisely Party", img:"images/Wisely/treasurer.jpg"}
                 ],
                 shs: [
@@ -220,7 +226,6 @@
             },
             auditor: {
                 jhs: [
-                    {id:"jaud1", name:"RIVER PÈREZ", party:"Polaris Party", img:"images/Polaris/perez.jpg"},
                     {id:"jaud2", name:"Xyrene Nuay Aragona", party:"Wisely Party", img:"images/Wisely/auditor.jpg"}
                 ],
                 shs: [
@@ -454,9 +459,14 @@
             });
 
             // Unified positions (all SSG voters)
-            const unifiedPositions = ['peace', 'internalPio', 'externalPio'];
+            const unifiedPositionLabels = {
+                peace: 'Peace Officer',
+                internalPio: 'Internal PIO',
+                externalPio: 'External PIO'
+            };
+            const unifiedPositions = Object.keys(unifiedPositionLabels);
             unifiedPositions.forEach(pos => {
-                const displayName = pos.replace(/([A-Z])/g, ' $1').replace(/^/, (c) => c.toUpperCase()).trim();
+                const displayName = unifiedPositionLabels[pos];
                 html += `<div class="mb-12"><h3 class="text-xl font-medium mb-4">${displayName}</h3><div class="grid grid-cols-1 md:grid-cols-2 gap-6">`;
                 candidatesData.ssg[pos].forEach(c => html += createCard(c, 'radio', `ssg-${pos}`));
                 html += `</div></div>`;
@@ -680,8 +690,13 @@
             });
 
             // Unified positions
-            ['peace', 'internalPio', 'externalPio'].forEach(pos => {
-                const displayName = pos.replace(/([A-Z])/g, ' $1').trim();
+            const unifiedPositionLabels = {
+                peace: 'Peace Officer',
+                internalPio: 'Internal PIO',
+                externalPio: 'External PIO'
+            };
+            Object.keys(unifiedPositionLabels).forEach(pos => {
+                const displayName = unifiedPositionLabels[pos];
                 html += `<div><h4 class="text-xl font-semibold mb-4">${displayName}</h4><div class="space-y-3">`;
                 data[pos].forEach(candidate => {
                     const votes = allVotesData.filter(v => v[`ssg${pos.charAt(0).toUpperCase()}${pos.slice(1)}`] === candidate.id).length;
