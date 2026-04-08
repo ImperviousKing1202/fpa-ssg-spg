@@ -432,8 +432,8 @@
 
         if (isSPG) {
             Object.keys(candidatesData.spg.main).forEach(pos => {
-                const inputType = (pos === 'peace' || pos === 'internalPio') ? 'checkbox' : 'radio';
-                const maxText = (pos === 'peace' || pos === 'internalPio') ? ' <span class="text-slate-500">(max 2)</span>' : '';
+                const inputType = pos === 'internalPio' ? 'checkbox' : 'radio';
+                const maxText = pos === 'internalPio' ? ' <span class="text-slate-500">(max 2)</span>' : '';
                 const displayName = pos === 'peace' ? 'Peace Officer' : (pos === 'internalPio' ? 'PIO' : pos.charAt(0).toUpperCase() + pos.slice(1));
                 html += `<div class="mb-10"><h3 class="text-xl font-medium mb-4">${displayName}${maxText}</h3><div class="grid grid-cols-1 md:grid-cols-2 gap-6" id="${pos === 'peace' ? 'peace-container' : (pos === 'internalPio' ? 'pio-container' : '')}">`;
                 candidatesData.spg.main[pos].forEach(c => html += createCard(c, inputType, `spg-${pos}`));
@@ -934,11 +934,37 @@
     }
 
     function showConfetti() {
-        for (let i = 0; i < 60; i++) {
+        const colors = ['#7f1d1d', '#dc2626', '#f59e0b', '#16a34a', '#2563eb'];
+        for (let i = 0; i < 50; i++) {
             const c = document.createElement('div');
-            c.style.cssText = `position:fixed;left:${Math.random()*100}vw;top:-10px;width:10px;height:10px;background:#7f1d1d;z-index:99999;`;
+            const size = 6 + Math.random() * 8;
+            const drift = (Math.random() - 0.5) * 180;
+            const rotate = (Math.random() - 0.5) * 720;
+            const duration = 1800 + Math.random() * 1200;
+            const color = colors[Math.floor(Math.random() * colors.length)];
+
+            c.style.cssText = `
+                position: fixed;
+                left: ${Math.random() * 100}vw;
+                top: -20px;
+                width: ${size}px;
+                height: ${size}px;
+                border-radius: 999px;
+                background: ${color};
+                opacity: 0.9;
+                z-index: 99999;
+                pointer-events: none;
+                will-change: transform, opacity;
+            `;
             document.body.appendChild(c);
-            c.animate([{transform:'translateY(0)'},{transform:`translateY(${window.innerHeight+100}px)`}],{duration:2500}).onfinish=()=>c.remove();
+
+            c.animate(
+                [
+                    { transform: 'translate3d(0, 0, 0) rotate(0deg)', opacity: 0.95 },
+                    { transform: `translate3d(${drift}px, ${window.innerHeight + 120}px, 0) rotate(${rotate}deg)`, opacity: 0.2 }
+                ],
+                { duration, easing: 'cubic-bezier(0.22, 0.61, 0.36, 1)' }
+            ).onfinish = () => c.remove();
         }
     }
 
