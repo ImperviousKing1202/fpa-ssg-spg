@@ -80,6 +80,9 @@
         <div class="p-8 border-b sticky top-0 bg-white flex justify-between items-center">
             <h2 class="text-3xl font-semibold">Live Election Results – Admin</h2>
             <div class="flex gap-3">
+                <button onclick="resetVotes()" class="px-6 py-2 bg-red-600 text-white rounded-3xl flex items-center gap-x-2 text-sm">
+                    <i class="fa-solid fa-trash"></i> Reset Votes
+                </button>
                 <button onclick="exportToGoogleSheets()" class="px-6 py-2 bg-green-600 text-white rounded-3xl flex items-center gap-x-2 text-sm">
                     <i class="fa-solid fa-file-export"></i> Export to CSV
                 </button>
@@ -93,7 +96,7 @@
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
     import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
-    import { getFirestore, collection, doc, setDoc, onSnapshot, serverTimestamp, getDoc } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
+    import { getFirestore, collection, doc, setDoc, onSnapshot, serverTimestamp, getDoc, deleteDoc, getDocs } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyDB1dKxJgri21VQvQvtQcraR2uo5pa_4UQ",
@@ -485,6 +488,37 @@
         // (The full export function is in previous message - it works)
     }
 
+    async function resetVotes() {
+        const password = prompt("Enter admin password to reset all votes:");
+        if (password !== "12345678") {
+            alert("Incorrect password. Reset cancelled.");
+            return;
+        }
+        
+        if (!confirm("⚠️ WARNING: This will permanently delete ALL votes! Are you sure?")) {
+            return;
+        }
+        
+        try {
+            const votesRef = collection(db, "votes");
+            const snapshot = await getDocs(votesRef);
+            
+            const deletePromises = [];
+            snapshot.forEach((doc) => {
+                deletePromises.push(deleteDoc(doc.ref));
+            });
+            
+            await Promise.all(deletePromises);
+            alert(`✅ Successfully reset ${deletePromises.length} votes!`);
+            
+            // Refresh the admin panel
+            loadLiveResults();
+        } catch (error) {
+            console.error("Error resetting votes:", error);
+            alert("❌ Error resetting votes: " + error.message);
+        }
+    }
+
     function showConfetti() {
         for (let i = 0; i < 60; i++) {
             const c = document.createElement('div');
@@ -506,6 +540,7 @@
     window.showAdminPanel = showAdminPanel;
     window.hideAdminPanel = hideAdminPanel;
     window.exportToGoogleSheets = exportToGoogleSheets;
+    window.resetVotes = resetVotes;
     window.loadBallot = loadBallot;
     window.submitVote = submitVote;
 
