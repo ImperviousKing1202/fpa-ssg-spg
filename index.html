@@ -503,7 +503,7 @@
                 <div id="reps-container" class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     ${(isSPG ? candidatesData.spg.gradeReps[repsGrade] : candidatesData.ssg.gradeReps[repsGrade] || [])
                         .filter(c => c !== null)
-                        .map(c => createCard(c, repsInputType, repsName, !isSPG))
+                        .map(c => createCard(c, repsInputType, repsName, true))
                         .join('')}
                     ${createAbstainCard(repsInputType, repsName)}
                 </div>
@@ -524,24 +524,6 @@
                     if (checked.length > 2) {
                         e.target.checked = false;
                         alert("You can only select a maximum of 2 representatives.");
-                    }
-                }
-            });
-        }
-
-        // For SPG peace officers (checkboxes, max 2)
-        const peaceContainer = document.getElementById('peace-container');
-        if (peaceContainer) {
-            peaceContainer.addEventListener('change', (e) => {
-                if (e.target.type === 'checkbox') {
-                    const checked = peaceContainer.querySelectorAll('input[type="checkbox"]:checked');
-                    const selectedParties = new Set(Array.from(checked).map(input => input.dataset.party));
-                    if (checked.length > 2) {
-                        e.target.checked = false;
-                        alert("You can only select a maximum of 2 peace officers.");
-                    } else if (selectedParties.size < checked.length) {
-                        e.target.checked = false;
-                        alert("You can only select 1 peace officer per party.");
                     }
                 }
             });
