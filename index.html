@@ -247,20 +247,16 @@
             ],
             gradeReps: {
                 7: [
-                    {id:"r71", name:"[Grade 7 Rep - Polaris]", party:"Polaris Party", img:"images/Polaris/grade7-rep.jpg"},
                     {id:"wr71", name:"Jaeger Raphael Olasiman", party:"Wisely Party", img:"images/Wisely/grade7-rep.jpg"}
                 ],
                 8: [
-                    {id:"r81", name:"[Grade 8 Rep - Polaris]", party:"Polaris Party", img:"images/Polaris/grade8-rep.jpg"},
                     {id:"wr81", name:"Samantha Semil", party:"Wisely Party", img:"images/Wisely/grade8-rep.jpg"}
                 ],
                 9: [
-                    {id:"r91", name:"[Grade 9 Rep - Polaris]", party:"Polaris Party", img:"images/Polaris/grade9-rep.jpg"},
                     {id:"wr91", name:"Chiesa Grace Fabela Apatan", party:"Wisely Party", img:"images/Wisely/grade9-rep-1.jpg"},
                     {id:"wr92", name:"Rhon Arcana", party:"Wisely Party", img:"images/Wisely/grade9-rep-2.jpg"}
                 ],
                 10: [
-                    {id:"r101", name:"[Grade 10 Rep - Polaris]", party:"Polaris Party", img:"images/Polaris/grade10-rep.jpg"},
                     {id:"wr101", name:"Brent Joseph Divinagracia", party:"Wisely Party", img:"images/Wisely/grade10-rep.jpg"}
                 ],
                 11: [
@@ -268,7 +264,6 @@
                     {id:"wr111", name:"Rezzan Mahamod", party:"Wisely Party", img:"images/Wisely/grade11-rep.jpg"}
                 ],
                 12: [
-                    {id:"r121", name:"[Grade 12 Rep - Polaris]", party:"Polaris Party", img:"images/Polaris/grade12-rep.jpg"},
                     {id:"wr121", name:"Krizelle Manaug", party:"Wisely Party", img:"images/Wisely/grade12-rep-1.jpg"},
                     {id:"wr122", name:"Von Ember Benedico", party:"Wisely Party", img:"images/Wisely/grade12-rep-2.jpg"}
                 ]
@@ -639,6 +634,11 @@
         const content = document.getElementById('admin-content');
         const isSSG = currentAdminTab === 'ssg';
         const data = isSSG ? candidatesData.ssg : candidatesData.spg;
+        const visibleCandidates = (list) => (list || []).filter(candidate => {
+            if (!candidate) return false;
+            const name = (candidate.name || '').trim();
+            return !(name.startsWith('[') && name.endsWith(']'));
+        });
         
         let html = `<div class="mb-8"><h3 class="text-2xl font-semibold mb-4">Total Votes: <span class="text-green-600">${allVotesData.length}</span></h3></div>`;
         
@@ -648,7 +648,7 @@
             
             // President
             html += `<div><h4 class="text-xl font-semibold mb-4">President</h4><div class="space-y-3">`;
-            data.president.forEach(candidate => {
+            visibleCandidates(data.president).forEach(candidate => {
                 const votes = allVotesData.filter(v => v.ssgPresident === candidate.id).length;
                 const percentage = allVotesData.length ? (votes / allVotesData.length * 100).toFixed(1) : 0;
                 const color = candidate.party === "Polaris Party" ? 'bg-yellow-600' : 'bg-red-600';
@@ -670,7 +670,7 @@
             
             // Vice Presidents
             html += `<div><h4 class="text-xl font-semibold mb-4">JHS Vice President</h4><div class="space-y-3">`;
-            data.vp.jhs.forEach(candidate => {
+            visibleCandidates(data.vp.jhs).forEach(candidate => {
                 const votes = allVotesData.filter(v => v.ssgVpJhs === candidate.id).length;
                 const percentage = allVotesData.length ? (votes / allVotesData.length * 100).toFixed(1) : 0;
                 const color = candidate.party === "Polaris Party" ? 'bg-yellow-600' : 'bg-red-600';
@@ -686,7 +686,7 @@
             html += `</div></div>`;
             
             html += `<div><h4 class="text-xl font-semibold mb-4">SHS Vice President</h4><div class="space-y-3">`;
-            data.vp.shs.forEach(candidate => {
+            visibleCandidates(data.vp.shs).forEach(candidate => {
                 const votes = allVotesData.filter(v => v.ssgVpShs === candidate.id).length;
                 const percentage = allVotesData.length ? (votes / allVotesData.length * 100).toFixed(1) : 0;
                 const color = candidate.party === "Polaris Party" ? 'bg-yellow-600' : 'bg-red-600';
@@ -709,7 +709,7 @@
             ];
             splitPositions.forEach(({ label, list, voteKey }) => {
                 html += `<div><h4 class="text-xl font-semibold mb-4">JHS ${label}</h4><div class="space-y-3">`;
-                list.jhs.forEach(candidate => {
+                visibleCandidates(list.jhs).forEach(candidate => {
                     const votes = allVotesData.filter(v => v[`ssg${voteKey}Jhs`] === candidate.id).length;
                     const percentage = allVotesData.length ? (votes / allVotesData.length * 100).toFixed(1) : 0;
                     const color = candidate.party === "Polaris Party" ? 'bg-yellow-600' : 'bg-red-600';
@@ -725,7 +725,7 @@
                 html += `</div></div>`;
 
                 html += `<div><h4 class="text-xl font-semibold mb-4">SHS ${label}</h4><div class="space-y-3">`;
-                list.shs.forEach(candidate => {
+                visibleCandidates(list.shs).forEach(candidate => {
                     const votes = allVotesData.filter(v => v[`ssg${voteKey}Shs`] === candidate.id).length;
                     const percentage = allVotesData.length ? (votes / allVotesData.length * 100).toFixed(1) : 0;
                     const color = candidate.party === "Polaris Party" ? 'bg-yellow-600' : 'bg-red-600';
@@ -750,7 +750,7 @@
             Object.keys(unifiedPositionLabels).forEach(pos => {
                 const displayName = unifiedPositionLabels[pos];
                 html += `<div><h4 class="text-xl font-semibold mb-4">${displayName}</h4><div class="space-y-3">`;
-                data[pos].forEach(candidate => {
+                visibleCandidates(data[pos]).forEach(candidate => {
                     const votes = allVotesData.filter(v => v[`ssg${pos.charAt(0).toUpperCase()}${pos.slice(1)}`] === candidate.id).length;
                     const percentage = allVotesData.length ? (votes / allVotesData.length * 100).toFixed(1) : 0;
                     const color = candidate.party === "Polaris Party" ? 'bg-yellow-600' : 'bg-red-600';
@@ -769,7 +769,7 @@
             // Grade Representatives (SSG)
             html += `<div><h4 class="text-xl font-semibold mb-4">Grade Level Representatives</h4><div class="space-y-8">`;
             Object.keys(data.gradeReps).sort((a, b) => Number(a) - Number(b)).forEach((grade) => {
-                const candidates = (data.gradeReps[grade] || []).filter(Boolean);
+                const candidates = visibleCandidates(data.gradeReps[grade]);
                 if (!candidates.length) return;
                 html += `<div><h5 class="text-lg font-semibold mb-3">Grade ${grade} Representatives</h5><div class="space-y-3">`;
                 candidates.forEach((candidate) => {
@@ -797,7 +797,7 @@
             Object.keys(data.main).forEach(pos => {
                 const displayName = pos.charAt(0).toUpperCase() + pos.slice(1);
                 html += `<div><h4 class="text-xl font-semibold mb-4">${displayName}</h4><div class="space-y-3">`;
-                data.main[pos].forEach(candidate => {
+                visibleCandidates(data.main[pos]).forEach(candidate => {
                     const votes = allVotesData.filter(v => {
                         if (pos === 'peace') {
                             return Array.isArray(v.spgPeace) && v.spgPeace.includes(candidate.id);
@@ -821,7 +821,7 @@
             // Grade Representatives (SPG)
             html += `<div><h4 class="text-xl font-semibold mb-4">Grade Level Representatives</h4><div class="space-y-8">`;
             Object.keys(data.gradeReps).sort((a, b) => Number(a) - Number(b)).forEach((grade) => {
-                const candidates = (data.gradeReps[grade] || []).filter(Boolean);
+                const candidates = visibleCandidates(data.gradeReps[grade]);
                 if (!candidates.length) return;
                 html += `<div><h5 class="text-lg font-semibold mb-3">Grade ${grade} Representatives</h5><div class="space-y-3">`;
                 candidates.forEach((candidate) => {
