@@ -402,6 +402,20 @@
         </label>`;
     }
 
+    function createAbstainCard(type, name) {
+        if (type !== 'radio') return '';
+        const abstainToken = `abstain:${name}`;
+        return `
+        <label class="ballot-card bg-white border-2 border-dashed border-slate-300 rounded-3xl p-5 cursor-pointer flex gap-5 items-start">
+            <input type="radio" name="${name}" value="${abstainToken}" class="mt-1.5 accent-slate-500">
+            <div class="w-20 h-20 rounded-2xl bg-slate-100 flex items-center justify-center text-3xl text-slate-500">∅</div>
+            <div class="flex-1">
+                <h4 class="font-semibold text-lg">ABSTAIN</h4>
+                <span class="inline-block px-3 py-1 text-xs font-medium rounded-full bg-slate-100 text-slate-700">No vote for this position</span>
+            </div>
+        </label>`;
+    }
+
     function loadBallot() {
         selectedGrade = parseInt(document.getElementById('grade-select').value);
         if (!selectedGrade) return;
@@ -425,12 +439,14 @@
                 const maxText = pos === 'peace' ? ' <span class="text-slate-500">(max 2)</span>' : '';
                 html += `<div class="mb-10"><h3 class="text-xl font-medium mb-4 capitalize">${pos}${maxText}</h3><div class="grid grid-cols-1 md:grid-cols-2 gap-6" id="${pos === 'peace' ? 'peace-container' : ''}">`;
                 candidatesData.spg.main[pos].forEach(c => html += createCard(c, inputType, `spg-${pos}`));
+                html += createAbstainCard(inputType, `spg-${pos}`);
                 html += `</div></div>`;
             });
         } else {
             // President
             html += `<div class="mb-12"><h3 class="text-xl font-medium mb-4">President (All vote)</h3><div class="grid grid-cols-1 md:grid-cols-2 gap-6">`;
             candidatesData.ssg.president.forEach(c => html += createCard(c, 'radio', 'ssg-president'));
+            html += createAbstainCard('radio', 'ssg-president');
             html += `</div></div>`;
 
             // Vice Presidents (JHS/SHS)
@@ -438,11 +454,13 @@
             if (nextGrade <= 10) {
                 html += `<div class="mb-6"><h4 class="text-lg font-medium mb-3">JHS Vice President</h4><div class="grid grid-cols-1 md:grid-cols-2 gap-6">`;
                 candidatesData.ssg.vp.jhs.forEach(c => html += createCard(c, 'radio', 'ssg-vp-jhs'));
+                html += createAbstainCard('radio', 'ssg-vp-jhs');
                 html += `</div></div>`;
             }
             if (nextGrade >= 11) {
                 html += `<div class="mb-6"><h4 class="text-lg font-medium mb-3">SHS Vice President</h4><div class="grid grid-cols-1 md:grid-cols-2 gap-6">`;
                 candidatesData.ssg.vp.shs.forEach(c => html += createCard(c, 'radio', 'ssg-vp-shs'));
+                html += createAbstainCard('radio', 'ssg-vp-shs');
                 html += `</div></div>`;
             }
             html += `</div>`;
@@ -455,6 +473,7 @@
                 const displayName = pos.charAt(0).toUpperCase() + pos.slice(1);
                 html += `<div class="mb-12"><h3 class="text-xl font-medium mb-4">${levelLabel} ${displayName}</h3><div class="grid grid-cols-1 md:grid-cols-2 gap-6">`;
                 candidatesData.ssg[pos][levelKey].forEach(c => html += createCard(c, 'radio', `ssg-${pos}-${levelKey}`));
+                html += createAbstainCard('radio', `ssg-${pos}-${levelKey}`);
                 html += `</div></div>`;
             });
 
@@ -469,6 +488,7 @@
                 const displayName = unifiedPositionLabels[pos];
                 html += `<div class="mb-12"><h3 class="text-xl font-medium mb-4">${displayName}</h3><div class="grid grid-cols-1 md:grid-cols-2 gap-6">`;
                 candidatesData.ssg[pos].forEach(c => html += createCard(c, 'radio', `ssg-${pos}`));
+                html += createAbstainCard('radio', `ssg-${pos}`);
                 html += `</div></div>`;
             });
         }
@@ -478,14 +498,16 @@
         if (repsGrade >= 4 && repsGrade <= 12) {
             const repsInputType = isSPG ? 'radio' : 'checkbox';
             const repsMaxText = isSPG ? '' : ' <span class="text-slate-500">(max 2)</span>';
+            const repsName = `rep-${isSPG ? 'spg' : 'ssg'}-${repsGrade}`;
             html += `
             <div>
                 <h3 class="text-xl font-medium mb-4">Grade ${repsGrade} Representatives${repsMaxText}</h3>
                 <div id="reps-container" class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     ${(isSPG ? candidatesData.spg.gradeReps[repsGrade] : candidatesData.ssg.gradeReps[repsGrade] || [])
                         .filter(c => c !== null)
-                        .map(c => createCard(c, repsInputType, `rep-${isSPG ? 'spg' : 'ssg'}-${repsGrade}`))
+                        .map(c => createCard(c, repsInputType, repsName))
                         .join('')}
+                    ${createAbstainCard(repsInputType, repsName)}
                 </div>
             </div>`;
         }
@@ -638,6 +660,12 @@
                     <div class="h-3 bg-slate-200 rounded-full"><div class="bar h-full ${color}" style="width:${percentage}%"></div></div>
                 `;
             });
+            {
+                const votes = allVotesData.filter(v => v.ssgPresident === 'abstain:ssg-president').length;
+                const percentage = allVotesData.length ? (votes / allVotesData.length * 100).toFixed(1) : 0;
+                html += `<div class="flex items-center justify-between"><span class="font-medium">ABSTAIN</span><span class="text-lg font-bold">${votes} (${percentage}%)</span></div>
+                    <div class="h-3 bg-slate-200 rounded-full"><div class="bar h-full bg-slate-500" style="width:${percentage}%"></div></div>`;
+            }
             html += `</div></div>`;
             
             // Vice Presidents
@@ -649,6 +677,12 @@
                 html += `<div class="flex justify-between items-center"><span>${candidate.name}</span><span>${votes}</span></div>
                     <div class="h-2 bg-slate-200 rounded"><div class="bar h-full ${color}" style="width:${percentage}%"></div></div>`;
             });
+            {
+                const votes = allVotesData.filter(v => v.ssgVpJhs === 'abstain:ssg-vp-jhs').length;
+                const percentage = allVotesData.length ? (votes / allVotesData.length * 100).toFixed(1) : 0;
+                html += `<div class="flex justify-between items-center"><span>ABSTAIN</span><span>${votes}</span></div>
+                    <div class="h-2 bg-slate-200 rounded"><div class="bar h-full bg-slate-500" style="width:${percentage}%"></div></div>`;
+            }
             html += `</div></div>`;
             
             html += `<div><h4 class="text-xl font-semibold mb-4">SHS Vice President</h4><div class="space-y-3">`;
@@ -659,6 +693,12 @@
                 html += `<div class="flex justify-between items-center"><span>${candidate.name}</span><span>${votes}</span></div>
                     <div class="h-2 bg-slate-200 rounded"><div class="bar h-full ${color}" style="width:${percentage}%"></div></div>`;
             });
+            {
+                const votes = allVotesData.filter(v => v.ssgVpShs === 'abstain:ssg-vp-shs').length;
+                const percentage = allVotesData.length ? (votes / allVotesData.length * 100).toFixed(1) : 0;
+                html += `<div class="flex justify-between items-center"><span>ABSTAIN</span><span>${votes}</span></div>
+                    <div class="h-2 bg-slate-200 rounded"><div class="bar h-full bg-slate-500" style="width:${percentage}%"></div></div>`;
+            }
             html += `</div></div>`;
             
             // JHS / SHS positions (saved as separate vote fields)
@@ -676,6 +716,12 @@
                     html += `<div class="flex justify-between items-center"><span>${candidate.name}</span><span>${votes}</span></div>
                         <div class="h-2 bg-slate-200 rounded"><div class="bar h-full ${color}" style="width:${percentage}%"></div></div>`;
                 });
+                {
+                    const votes = allVotesData.filter(v => v[`ssg${voteKey}Jhs`] === `abstain:ssg-${voteKey.toLowerCase()}-jhs`).length;
+                    const percentage = allVotesData.length ? (votes / allVotesData.length * 100).toFixed(1) : 0;
+                    html += `<div class="flex justify-between items-center"><span>ABSTAIN</span><span>${votes}</span></div>
+                        <div class="h-2 bg-slate-200 rounded"><div class="bar h-full bg-slate-500" style="width:${percentage}%"></div></div>`;
+                }
                 html += `</div></div>`;
 
                 html += `<div><h4 class="text-xl font-semibold mb-4">SHS ${label}</h4><div class="space-y-3">`;
@@ -686,6 +732,12 @@
                     html += `<div class="flex justify-between items-center"><span>${candidate.name}</span><span>${votes}</span></div>
                         <div class="h-2 bg-slate-200 rounded"><div class="bar h-full ${color}" style="width:${percentage}%"></div></div>`;
                 });
+                {
+                    const votes = allVotesData.filter(v => v[`ssg${voteKey}Shs`] === `abstain:ssg-${voteKey.toLowerCase()}-shs`).length;
+                    const percentage = allVotesData.length ? (votes / allVotesData.length * 100).toFixed(1) : 0;
+                    html += `<div class="flex justify-between items-center"><span>ABSTAIN</span><span>${votes}</span></div>
+                        <div class="h-2 bg-slate-200 rounded"><div class="bar h-full bg-slate-500" style="width:${percentage}%"></div></div>`;
+                }
                 html += `</div></div>`;
             });
 
@@ -705,6 +757,12 @@
                     html += `<div class="flex justify-between items-center"><span>${candidate.name}</span><span>${votes}</span></div>
                         <div class="h-2 bg-slate-200 rounded"><div class="bar h-full ${color}" style="width:${percentage}%"></div></div>`;
                 });
+                {
+                    const votes = allVotesData.filter(v => v[`ssg${pos.charAt(0).toUpperCase()}${pos.slice(1)}`] === `abstain:ssg-${pos}`).length;
+                    const percentage = allVotesData.length ? (votes / allVotesData.length * 100).toFixed(1) : 0;
+                    html += `<div class="flex justify-between items-center"><span>ABSTAIN</span><span>${votes}</span></div>
+                        <div class="h-2 bg-slate-200 rounded"><div class="bar h-full bg-slate-500" style="width:${percentage}%"></div></div>`;
+                }
                 html += `</div></div>`;
             });
 
@@ -721,6 +779,12 @@
                     html += `<div class="flex justify-between items-center"><span>${candidate.name} (${candidate.party})</span><span>${votes} (${percentage}%)</span></div>
                         <div class="h-2 bg-slate-200 rounded"><div class="bar h-full ${color}" style="width:${percentage}%"></div></div>`;
                 });
+                {
+                    const votes = allVotesData.filter(v => Array.isArray(v.gradeReps) && v.gradeReps.includes(`abstain:rep-ssg-${grade}`)).length;
+                    const percentage = allVotesData.length ? (votes / allVotesData.length * 100).toFixed(1) : 0;
+                    html += `<div class="flex justify-between items-center"><span>ABSTAIN</span><span>${votes} (${percentage}%)</span></div>
+                        <div class="h-2 bg-slate-200 rounded"><div class="bar h-full bg-slate-500" style="width:${percentage}%"></div></div>`;
+                }
                 html += `</div></div>`;
             });
             html += `</div></div>`;
@@ -745,6 +809,12 @@
                     html += `<div class="flex justify-between items-center"><span>${candidate.name}</span><span>${votes}</span></div>
                         <div class="h-2 bg-slate-200 rounded"><div class="bar h-full ${color}" style="width:${percentage}%"></div></div>`;
                 });
+                if (pos !== 'peace') {
+                    const votes = allVotesData.filter(v => v[`spg${pos.charAt(0).toUpperCase()}${pos.slice(1)}`] === `abstain:spg-${pos}`).length;
+                    const percentage = allVotesData.length ? (votes / allVotesData.length * 100).toFixed(1) : 0;
+                    html += `<div class="flex justify-between items-center"><span>ABSTAIN</span><span>${votes}</span></div>
+                        <div class="h-2 bg-slate-200 rounded"><div class="bar h-full bg-slate-500" style="width:${percentage}%"></div></div>`;
+                }
                 html += `</div></div>`;
             });
 
@@ -761,6 +831,12 @@
                     html += `<div class="flex justify-between items-center"><span>${candidate.name} (${candidate.party})</span><span>${votes} (${percentage}%)</span></div>
                         <div class="h-2 bg-slate-200 rounded"><div class="bar h-full ${color}" style="width:${percentage}%"></div></div>`;
                 });
+                {
+                    const votes = allVotesData.filter(v => Array.isArray(v.gradeReps) && v.gradeReps.includes(`abstain:rep-spg-${grade}`)).length;
+                    const percentage = allVotesData.length ? (votes / allVotesData.length * 100).toFixed(1) : 0;
+                    html += `<div class="flex justify-between items-center"><span>ABSTAIN</span><span>${votes} (${percentage}%)</span></div>
+                        <div class="h-2 bg-slate-200 rounded"><div class="bar h-full bg-slate-500" style="width:${percentage}%"></div></div>`;
+                }
                 html += `</div></div>`;
             });
             html += `</div></div>`;
