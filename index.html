@@ -72,6 +72,32 @@
             </div>
         </form>
     </div>
+
+    <!-- THANK YOU PAGE -->
+    <div id="thank-you-screen" class="hidden">
+        <div class="max-w-2xl mx-auto bg-white rounded-3xl shadow-xl p-12 text-center">
+            <div class="mb-8">
+                <div class="text-6xl mb-4">✨</div>
+                <h1 class="text-4xl font-bold text-red-800 mb-4">Thank You!</h1>
+            </div>
+            
+            <div class="space-y-6 mb-10 text-lg text-slate-700">
+                <p class="text-2xl font-semibold text-red-800 mb-4">Thank you for exercising your right to suffrage.</p>
+                <p>Your vote has been successfully submitted and recorded. You have actively participated in shaping the future of our Foundation University community.</p>
+                <p>The pillars of democracy are built on the voices of engaged citizens like you. By voting today, you have demonstrated your commitment to student governance and your passion for positive change.</p>
+                <div class="bg-red-50 border-l-4 border-red-800 p-6 rounded text-left">
+                    <p class="font-semibold text-red-800 mb-2">Your Contribution Matters</p>
+                    <p class="text-slate-700">Democracy thrives when every voice is heard. Thank you for making your voice count in this important election. Together, we build a stronger, more inclusive Foundation University.</p>
+                </div>
+            </div>
+            
+            <div class="flex gap-4 justify-center">
+                <button onclick="logout()" class="px-8 py-3 bg-red-800 text-white font-semibold rounded-3xl hover:bg-red-900 transition">
+                    <i class="fa-solid fa-arrow-right-from-bracket mr-2"></i> Logout
+                </button>
+            </div>
+        </div>
+    </div>
 </div>
 
 <!-- ADMIN PANEL -->
@@ -447,7 +473,10 @@
 
         try {
             await setDoc(doc(db, "votes", currentUser.uid), voteData);
-            alert("✅ Vote submitted successfully!");
+            // Hide dashboard and show thank you page
+            document.getElementById('dashboard-screen').classList.add('hidden');
+            document.getElementById('thank-you-screen').classList.remove('hidden');
+            // Show celebratory confetti
             showConfetti();
         } catch (err) {
             console.error("Vote submission error:", err);
