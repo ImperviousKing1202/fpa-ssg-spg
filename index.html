@@ -147,6 +147,40 @@
     let isAdminUser = false;
     let unsubscribeResults = null;
 
+    // Allow "click again to unselect" behavior for radios.
+    // Native radios can't be unchecked by clicking them again, so we emulate it
+    // and re-dispatch a change event so any existing listeners still run.
+    function setupRadioUnselectToggle() {
+        const markWasChecked = (radio) => {
+            if (!(radio instanceof HTMLInputElement)) return;
+            if (radio.type !== 'radio') return;
+            radio.dataset.wasChecked = radio.checked ? 'true' : 'false';
+        };
+
+        document.addEventListener('pointerdown', (e) => {
+            const radio = e.target?.closest?.('input[type="radio"]');
+            if (radio) markWasChecked(radio);
+        }, true);
+
+        document.addEventListener('keydown', (e) => {
+            // Keyboard: space/enter on a focused radio should also be able to unselect.
+            if (e.key !== ' ' && e.key !== 'Enter') return;
+            const radio = document.activeElement;
+            if (radio && radio.matches?.('input[type="radio"]')) markWasChecked(radio);
+        }, true);
+
+        document.addEventListener('click', (e) => {
+            const radio = e.target?.closest?.('input[type="radio"]');
+            if (!radio) return;
+
+            if (radio.dataset.wasChecked === 'true') {
+                radio.checked = false;
+                radio.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+            delete radio.dataset.wasChecked;
+        }, true);
+    }
+
     // ================== PLACEHOLDERS FOR ALL POSITIONS ==================
     const candidatesData = {
         ssg: {
@@ -667,6 +701,8 @@
     }
 
     onAuthStateChanged(auth, (user) => { if (user) currentUser = user; });
+
+    setupRadioUnselectToggle();
 
     // Expose module-scoped handlers so inline HTML events can call them
     window.signInWithGoogle = signInWithGoogle;
