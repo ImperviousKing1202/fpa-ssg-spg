@@ -89,6 +89,10 @@
                 <button onclick="hideAdminPanel()" class="text-3xl text-slate-400 hover:text-slate-600">✕</button>
             </div>
         </div>
+        <div id="admin-tabs" class="flex gap-2 p-8 border-b">
+            <button onclick="switchAdminTab('ssg')" id="tab-ssg" class="px-6 py-2 bg-red-800 text-white rounded-3xl font-medium">SSG Results</button>
+            <button onclick="switchAdminTab('spg')" id="tab-spg" class="px-6 py-2 bg-slate-200 text-slate-700 rounded-3xl font-medium hover:bg-slate-300">SPG Results</button>
+        </div>
         <div id="admin-content" class="p-8"></div>
     </div>
 </div>
@@ -350,9 +354,9 @@
             });
         }
 
-        // Grade Reps for next grade
-        const repsGrade = nextGrade;
-        if (repsGrade <= 12) {
+        // Grade Reps for next grade (clamp Grade 12 to vote for Grade 12 reps)
+        const repsGrade = nextGrade > 12 ? 12 : nextGrade;
+        if (repsGrade >= 4 && repsGrade <= 12) {
             const repsInputType = isSPG ? 'radio' : 'checkbox';
             const repsMaxText = isSPG ? '' : ' <span class="text-slate-500">(max 2)</span>';
             html += `
@@ -466,30 +470,117 @@
         if (unsubscribeResults) unsubscribeResults();
     }
 
+    let allVotesData = [];
+    let currentAdminTab = 'ssg';
+
+    function switchAdminTab(tab) {
+        currentAdminTab = tab;
+        document.getElementById('tab-ssg').className = tab === 'ssg' ? 'px-6 py-2 bg-red-800 text-white rounded-3xl font-medium' : 'px-6 py-2 bg-slate-200 text-slate-700 rounded-3xl font-medium hover:bg-slate-300';
+        document.getElementById('tab-spg').className = tab === 'spg' ? 'px-6 py-2 bg-amber-500 text-white rounded-3xl font-medium' : 'px-6 py-2 bg-slate-200 text-slate-700 rounded-3xl font-medium hover:bg-slate-300';
+        renderAdminResults();
+    }
+
+    function renderAdminResults() {
+        const content = document.getElementById('admin-content');
+        const isSSG = currentAdminTab === 'ssg';
+        const data = isSSG ? candidatesData.ssg : candidatesData.spg;
+        
+        let html = `<div class="mb-8"><h3 class="text-2xl font-semibold mb-4">Total Votes: <span class="text-green-600">${allVotesData.length}</span></h3></div>`;
+        
+        if (isSSG) {
+            // SSG Results
+            html += `<div class="space-y-8">`;
+            
+            // President
+            html += `<div><h4 class="text-xl font-semibold mb-4">President</h4><div class="space-y-3">`;
+            data.president.forEach(candidate => {
+                const votes = allVotesData.filter(v => v.ssgPresident === candidate.id).length;
+                const percentage = allVotesData.length ? (votes / allVotesData.length * 100).toFixed(1) : 0;
+                const color = candidate.party === "Polaris Party" ? 'bg-yellow-600' : 'bg-red-600';
+                html += `
+                    <div class="flex items-center justify-between">
+                        <span class="font-medium">${candidate.name} (${candidate.party})</span>
+                        <span class="text-lg font-bold">${votes} (${percentage}%)</span>
+                    </div>
+                    <div class="h-3 bg-slate-200 rounded-full"><div class="bar h-full ${color}" style="width:${percentage}%"></div></div>
+                `;
+            });
+            html += `</div></div>`;
+            
+            // Vice Presidents
+            html += `<div><h4 class="text-xl font-semibold mb-4">JHS Vice President</h4><div class="space-y-3">`;
+            data.vp.jhs.forEach(candidate => {
+                const votes = allVotesData.filter(v => v.ssgVpJhs === candidate.id).length;
+                const percentage = allVotesData.length ? (votes / allVotesData.length * 100).toFixed(1) : 0;
+                const color = candidate.party === "Polaris Party" ? 'bg-yellow-600' : 'bg-red-600';
+                html += `<div class="flex justify-between items-center"><span>${candidate.name}</span><span>${votes}</span></div>
+                    <div class="h-2 bg-slate-200 rounded"><div class="bar h-full ${color}" style="width:${percentage}%"></div></div>`;
+            });
+            html += `</div></div>`;
+            
+            html += `<div><h4 class="text-xl font-semibold mb-4">SHS Vice President</h4><div class="space-y-3">`;
+            data.vp.shs.forEach(candidate => {
+                const votes = allVotesData.filter(v => v.ssgVpShs === candidate.id).length;
+                const percentage = allVotesData.length ? (votes / allVotesData.length * 100).toFixed(1) : 0;
+                const color = candidate.party === "Polaris Party" ? 'bg-yellow-600' : 'bg-red-600';
+                html += `<div class="flex justify-between items-center"><span>${candidate.name}</span><span>${votes}</span></div>
+                    <div class="h-2 bg-slate-200 rounded"><div class="bar h-full ${color}" style="width:${percentage}%"></div></div>`;
+            });
+            html += `</div></div>`;
+            
+            // Other positions
+            ['secretary', 'treasurer', 'auditor', 'peace', 'internalPio', 'externalPio'].forEach(pos => {
+                const displayName = pos.replace(/([A-Z])/g, ' $1').trim();
+                html += `<div><h4 class="text-xl font-semibold mb-4">${displayName}</h4><div class="space-y-3">`;
+                data[pos].forEach(candidate => {
+                    const votes = allVotesData.filter(v => v[`ssg${pos.charAt(0).toUpperCase()}${pos.slice(1)}`] === candidate.id).length;
+                    const percentage = allVotesData.length ? (votes / allVotesData.length * 100).toFixed(1) : 0;
+                    const color = candidate.party === "Polaris Party" ? 'bg-yellow-600' : 'bg-red-600';
+                    html += `<div class="flex justify-between items-center"><span>${candidate.name}</span><span>${votes}</span></div>
+                        <div class="h-2 bg-slate-200 rounded"><div class="bar h-full ${color}" style="width:${percentage}%"></div></div>`;
+                });
+                html += `</div></div>`;
+            });
+            
+            html += `</div>`;
+        } else {
+            // SPG Results
+            html += `<div class="space-y-8">`;
+            
+            Object.keys(data.main).forEach(pos => {
+                const displayName = pos.charAt(0).toUpperCase() + pos.slice(1);
+                html += `<div><h4 class="text-xl font-semibold mb-4">${displayName}</h4><div class="space-y-3">`;
+                data.main[pos].forEach(candidate => {
+                    const votes = allVotesData.filter(v => {
+                        if (pos === 'peace') {
+                            return Array.isArray(v.spgPeace) && v.spgPeace.includes(candidate.id);
+                        }
+                        return v[`spg${pos.charAt(0).toUpperCase()}${pos.slice(1)}`] === candidate.id;
+                    }).length;
+                    const percentage = allVotesData.length ? (votes / allVotesData.length * 100).toFixed(1) : 0;
+                    const color = candidate.party === "Shine" ? 'bg-yellow-600' : 'bg-blue-600';
+                    html += `<div class="flex justify-between items-center"><span>${candidate.name}</span><span>${votes}</span></div>
+                        <div class="h-2 bg-slate-200 rounded"><div class="bar h-full ${color}" style="width:${percentage}%"></div></div>`;
+                });
+                html += `</div></div>`;
+            });
+            
+            html += `</div>`;
+        }
+        
+        content.innerHTML = html;
+    }
+
     function loadLiveResults() {
         const content = document.getElementById('admin-content');
         content.innerHTML = `<p class="text-center py-12 text-slate-500">Loading live results...</p>`;
 
         unsubscribeResults = onSnapshot(collection(db, "votes"), (snapshot) => {
-            let total = snapshot.size;
-            let polaris = 0;
-            snapshot.forEach(d => { if (d.data().ssgPresident === "p1") polaris++; });
-
-            content.innerHTML = `
-                <div class="mb-10">
-                    <h3 class="text-2xl font-semibold mb-4">Total Votes: <span class="text-green-600">${total}</span></h3>
-                    <div class="space-y-6">
-                        <div>
-                            <div class="flex justify-between mb-1"><span>Polaris President</span><span>${polaris}</span></div>
-                            <div class="h-5 bg-slate-200 rounded-full"><div class="bar h-full bg-blue-600" style="width:${total? (polaris/total*100):0}%"></div></div>
-                        </div>
-                        <div>
-                            <div class="flex justify-between mb-1"><span>Wisely President</span><span>${total-polaris}</span></div>
-                            <div class="h-5 bg-slate-200 rounded-full"><div class="bar h-full bg-amber-500" style="width:${total? ((total-polaris)/total*100):0}%"></div></div>
-                        </div>
-                    </div>
-                </div>
-            `;
+            allVotesData = [];
+            snapshot.forEach(d => {
+                allVotesData.push(d.data());
+            });
+            renderAdminResults();
         });
     }
 
@@ -553,6 +644,7 @@
     window.logout = logout;
     window.showAdminPanel = showAdminPanel;
     window.hideAdminPanel = hideAdminPanel;
+    window.switchAdminTab = switchAdminTab;
     window.exportToGoogleSheets = exportToGoogleSheets;
     window.resetVotes = resetVotes;
     window.loadBallot = loadBallot;
