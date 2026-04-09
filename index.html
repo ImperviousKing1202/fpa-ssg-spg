@@ -121,6 +121,32 @@
             </div>
         </div>
     </div>
+
+    <!-- ALREADY VOTED SCREEN -->
+    <div id="already-voted-screen" class="hidden">
+        <div class="max-w-2xl mx-auto bg-white rounded-3xl shadow-xl p-12 text-center">
+            <div class="mb-8">
+                <div class="text-6xl mb-4">✅</div>
+                <h1 class="text-4xl font-bold text-green-700 mb-4">Your Vote Already Counts!</h1>
+            </div>
+            
+            <div class="space-y-6 mb-10 text-lg text-slate-700">
+                <p class="text-2xl font-semibold text-green-700 mb-4">Thank you for your participation in the election.</p>
+                <p>Our records show that you have already successfully cast your vote in this election. Your voice has been heard and your participation is valued.</p>
+                <p>Each student gets to vote only once to ensure a fair and democratic election. Your vote is secure and counted in our system.</p>
+                <div class="bg-green-50 border-l-4 border-green-700 p-6 rounded text-left">
+                    <p class="font-semibold text-green-700 mb-2">Your Impact is Recorded</p>
+                    <p class="text-slate-700">You have fulfilled your civic duty as a Foundation University student. Thank you for taking an active role in shaping our institution's leadership. Together, we're building a stronger community through democratic participation.</p>
+                </div>
+            </div>
+            
+            <div class="flex gap-4 justify-center">
+                <button onclick="logout()" class="px-8 py-3 bg-green-700 text-white font-semibold rounded-3xl hover:bg-green-800 transition">
+                    <i class="fa-solid fa-arrow-right-from-bracket mr-2"></i> Logout
+                </button>
+            </div>
+        </div>
+    </div>
 </div>
 
 <!-- ADMIN PANEL -->
@@ -336,6 +362,16 @@
     // ================== REST OF THE CODE (same as previous full version) ==================
     // (Sign in, loadBallot with max-2 enforcement, validation, submit, admin panel, export, etc.)
 
+    async function checkIfUserHasVoted() {
+        try {
+            const snap = await getDoc(doc(db, "votes", currentUser.uid));
+            return snap.exists();
+        } catch (error) {
+            console.warn("Vote check failed (possibly offline):", error);
+            return false;
+        }
+    }
+
     async function signInWithGoogle() {
         const provider = new GoogleAuthProvider();
         provider.setCustomParameters({ hd: "foundationu.com" });
@@ -351,13 +387,20 @@
             }
 
             document.getElementById('login-screen').classList.add('hidden');
-            document.getElementById('dashboard-screen').classList.remove('hidden');
             document.getElementById('nav-user').classList.remove('hidden');
             document.getElementById('nav-name').textContent = currentUser.displayName;
             document.getElementById('nav-email').textContent = currentUser.email;
 
             await checkIfAdmin();
-            populateGradeSelector();
+            
+            // Check if user has already voted
+            const hasVoted = await checkIfUserHasVoted();
+            if (hasVoted) {
+                document.getElementById('already-voted-screen').classList.remove('hidden');
+            } else {
+                document.getElementById('dashboard-screen').classList.remove('hidden');
+                populateGradeSelector();
+            }
         } catch (e) {
             console.error(e);
             alert("Login failed. Check console (F12) for details.");
