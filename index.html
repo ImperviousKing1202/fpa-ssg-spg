@@ -167,6 +167,7 @@
         <div id="admin-tabs" class="flex gap-2 p-8 border-b">
             <button onclick="switchAdminTab('ssg')" id="tab-ssg" class="px-6 py-2 bg-red-800 text-white rounded-3xl font-medium">SSG Results</button>
             <button onclick="switchAdminTab('spg')" id="tab-spg" class="px-6 py-2 bg-slate-200 text-slate-700 rounded-3xl font-medium hover:bg-slate-300">SPG Results</button>
+            <button onclick="switchAdminTab('voters')" id="tab-voters" class="px-6 py-2 bg-slate-200 text-slate-700 rounded-3xl font-medium hover:bg-slate-300">Voter List</button>
         </div>
         <div id="admin-content" class="p-8"></div>
     </div>
@@ -860,11 +861,83 @@
         currentAdminTab = tab;
         document.getElementById('tab-ssg').className = tab === 'ssg' ? 'px-6 py-2 bg-red-800 text-white rounded-3xl font-medium' : 'px-6 py-2 bg-slate-200 text-slate-700 rounded-3xl font-medium hover:bg-slate-300';
         document.getElementById('tab-spg').className = tab === 'spg' ? 'px-6 py-2 bg-amber-500 text-white rounded-3xl font-medium' : 'px-6 py-2 bg-slate-200 text-slate-700 rounded-3xl font-medium hover:bg-slate-300';
+        document.getElementById('tab-voters').className = tab === 'voters' ? 'px-6 py-2 bg-blue-600 text-white rounded-3xl font-medium' : 'px-6 py-2 bg-slate-200 text-slate-700 rounded-3xl font-medium hover:bg-slate-300';
         renderAdminResults();
     }
 
     function renderAdminResults() {
         const content = document.getElementById('admin-content');
+        
+        if (currentAdminTab === 'voters') {
+            // Voter List by Grade Level
+            const gradeCounts = {};
+            const gradeEmails = {};
+            
+            // Initialize grade counts
+            for (let grade = 3; grade <= 12; grade++) {
+                gradeCounts[grade] = 0;
+                gradeEmails[grade] = [];
+            }
+            
+            // Count votes by grade
+            allVotesData.forEach(vote => {
+                const grade = vote.grade;
+                if (grade >= 3 && grade <= 12) {
+                    gradeCounts[grade]++;
+                    gradeEmails[grade].push(vote.email);
+                }
+            });
+            
+            let html = `<div class="mb-8"><h3 class="text-2xl font-semibold mb-4">Voter Participation by Grade Level</h3><p class="text-slate-600 mb-6">Total Votes: <span class="text-green-600 font-bold">${allVotesData.length}</span></p></div>`;
+            
+            html += `<div class="space-y-6">`;
+            
+            // Summary cards
+            html += `<div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">`;
+            for (let grade = 3; grade <= 12; grade++) {
+                const count = gradeCounts[grade];
+                const percentage = allVotesData.length ? ((count / allVotesData.length) * 100).toFixed(1) : 0;
+                html += `
+                    <div class="bg-white border-2 border-slate-200 rounded-2xl p-4 text-center">
+                        <div class="text-2xl font-bold text-blue-600 mb-1">${count}</div>
+                        <div class="text-sm font-medium text-slate-700">Grade ${grade}</div>
+                        <div class="text-xs text-slate-500">${percentage}%</div>
+                    </div>`;
+            }
+            html += `</div>`;
+            
+            // Detailed lists by grade
+            for (let grade = 3; grade <= 12; grade++) {
+                const emails = gradeEmails[grade];
+                const count = gradeCounts[grade];
+                
+                html += `
+                    <div class="bg-white rounded-2xl border-2 border-slate-200 overflow-hidden">
+                        <div class="bg-slate-100 px-6 py-4 border-b border-slate-200">
+                            <h4 class="text-lg font-semibold text-slate-800">Grade ${grade} - ${count} Voters</h4>
+                        </div>
+                        <div class="max-h-64 overflow-y-auto">`;
+                
+                if (emails.length === 0) {
+                    html += `<div class="px-6 py-8 text-center text-slate-500">No votes recorded for Grade ${grade}</div>`;
+                } else {
+                    html += `<div class="divide-y divide-slate-100">`;
+                    emails.sort().forEach(email => {
+                        html += `<div class="px-6 py-3 text-sm text-slate-700 hover:bg-slate-50">${email}</div>`;
+                    });
+                    html += `</div>`;
+                }
+                
+                html += `
+                        </div>
+                    </div>`;
+            }
+            
+            html += `</div>`;
+            content.innerHTML = html;
+            return;
+        }
+        
         const isSSG = currentAdminTab === 'ssg';
         const data = isSSG ? candidatesData.ssg : candidatesData.spg;
         const visibleCandidates = (list) => (list || []).filter(candidate => {
