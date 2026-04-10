@@ -424,8 +424,29 @@
     function populateGradeSelector() {
         const select = document.getElementById('grade-select');
         let html = '<option value="">Select your grade level</option>';
-        for (let i = 3; i <= 12; i++) html += `<option value="${i}">Grade ${i}</option>`;
+        for (let i = 3; i <= 12; i++) {
+            if (i === 6) {
+                html += `<option value="6">Grade 6 — SPG (same as Grade 5); Grade 7 representatives</option>`;
+            } else {
+                html += `<option value="${i}">Grade ${i}</option>`;
+            }
+        }
         select.innerHTML = html;
+    }
+
+    /** SPG executive + PIO + peace — identical for Grades 3–6 (Grade 6 matches Grade 5). */
+    function buildSpgMainPositionsHtml() {
+        let h = '';
+        Object.keys(candidatesData.spg.main).forEach(pos => {
+            const inputType = pos === 'internalPio' ? 'checkbox' : 'radio';
+            const maxText = pos === 'internalPio' ? ' <span class="text-slate-500">(max 2)</span>' : '';
+            const displayName = pos === 'peace' ? 'Peace Officer' : (pos === 'internalPio' ? 'PIO' : pos.charAt(0).toUpperCase() + pos.slice(1));
+            h += `<div class="mb-10"><h3 class="text-xl font-medium mb-4">${displayName}${maxText}</h3><div class="grid grid-cols-1 md:grid-cols-2 gap-6" id="${pos === 'peace' ? 'peace-container' : (pos === 'internalPio' ? 'pio-container' : '')}">`;
+            candidatesData.spg.main[pos].forEach(c => h += createCard(c, inputType, `spg-${pos}`));
+            h += createAbstainCard(inputType, `spg-${pos}`);
+            h += `</div></div>`;
+        });
+        return h;
     }
 
     function createCard(c, type, name, showImage = true) {
@@ -506,20 +527,12 @@
         badge.textContent = isSPG ? 'Supreme Pupil Government (SPG)' : 'Supreme Student Government (SSG)';
         badge.className = `px-6 py-2 rounded-3xl text-white font-semibold bg-red-800`;
 
-        let html = isSPG ? 
-            `<h2 class="text-2xl font-semibold mb-6 flex items-center gap-3"><img src="assets/Shine/President-Sophia Francesca Medium.png" class="w-8 h-8 rounded object-cover"> SPG Positions</h2>` : 
+        let html = isSPG ?
+            `<h2 class="text-2xl font-semibold mb-6 flex items-center gap-3"><img src="assets/Shine/President-Sophia Francesca Medium.png" class="w-8 h-8 rounded object-cover"> SPG Positions</h2>` :
             `<h2 class="text-2xl font-semibold mb-6 flex items-center gap-3"><img src="assets/Polaris/fpa.jpg" class="w-8 h-8 rounded object-cover"> SSG Positions</h2>`;
 
         if (isSPG) {
-            Object.keys(candidatesData.spg.main).forEach(pos => {
-                const inputType = pos === 'internalPio' ? 'checkbox' : 'radio';
-                const maxText = pos === 'internalPio' ? ' <span class="text-slate-500">(max 2)</span>' : '';
-                const displayName = pos === 'peace' ? 'Peace Officer' : (pos === 'internalPio' ? 'PIO' : pos.charAt(0).toUpperCase() + pos.slice(1));
-                html += `<div class="mb-10"><h3 class="text-xl font-medium mb-4">${displayName}${maxText}</h3><div class="grid grid-cols-1 md:grid-cols-2 gap-6" id="${pos === 'peace' ? 'peace-container' : (pos === 'internalPio' ? 'pio-container' : '')}">`;
-                candidatesData.spg.main[pos].forEach(c => html += createCard(c, inputType, `spg-${pos}`));
-                html += createAbstainCard(inputType, `spg-${pos}`);
-                html += `</div></div>`;
-            });
+            html += buildSpgMainPositionsHtml();
         } else {
             // President
             html += `<div class="mb-12"><h3 class="text-xl font-medium mb-4">President (All vote)</h3><div class="grid grid-cols-1 md:grid-cols-2 gap-6">`;
@@ -571,17 +584,29 @@
             });
         }
 
-        // Grade Reps for next grade (clamp Grade 12 to vote for Grade 12 reps)
+        // Grade representatives: Grade 6 uses the same layout as Grade 5 (radio) but for SSG Grade 7 only
         const repsGrade = nextGrade > 12 ? 12 : nextGrade;
-        if (repsGrade >= 4 && repsGrade <= 12) {
-            // Grade 6: SPG executive positions, but Grade 7 reps come from the SSG (JHS) slate
-            const grade6SpgWithSsgReps = selectedGrade === 6;
+        if (selectedGrade === 6) {
+            const repsName = 'rep-ssg-7';
+            const repCandidates = candidatesData.ssg.gradeReps[7] || [];
+            html += `
+            <div>
+                <h3 class="text-xl font-medium mb-4">Grade 7 Representatives</h3>
+                <div id="reps-container" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    ${repCandidates
+                        .filter(c => c !== null)
+                        .map(c => createCard(c, 'radio', repsName, true))
+                        .join('')}
+                    ${createAbstainCard('radio', repsName)}
+                </div>
+            </div>`;
+        } else if (repsGrade >= 4 && repsGrade <= 12) {
             const spgRepList = candidatesData.spg.gradeReps[repsGrade] || [];
             const ssgRepList = candidatesData.ssg.gradeReps[repsGrade] || [];
-            const repCandidates = grade6SpgWithSsgReps ? ssgRepList : (isSPG ? spgRepList : ssgRepList);
-            const repsInputType = isSPG && !grade6SpgWithSsgReps ? 'radio' : 'checkbox';
-            const repsMaxText = isSPG && !grade6SpgWithSsgReps ? '' : ' <span class="text-slate-500">(max 2)</span>';
-            const repsName = grade6SpgWithSsgReps ? `rep-ssg-${repsGrade}` : `rep-${isSPG ? 'spg' : 'ssg'}-${repsGrade}`;
+            const repCandidates = isSPG ? spgRepList : ssgRepList;
+            const repsInputType = isSPG ? 'radio' : 'checkbox';
+            const repsMaxText = isSPG ? '' : ' <span class="text-slate-500">(max 2)</span>';
+            const repsName = `rep-${isSPG ? 'spg' : 'ssg'}-${repsGrade}`;
             html += `
             <div>
                 <h3 class="text-xl font-medium mb-4">Grade ${repsGrade} Representatives${repsMaxText}</h3>
@@ -659,67 +684,9 @@
         countdownEl.textContent = 'Open';
     }
 
-    function validateBallot() {
-        const isSPG = selectedGrade <= 6;
-        const requiredPositions = isSPG ? 
-            ['spg-president', 'spg-vp', 'spg-secretary', 'spg-treasurer', 'spg-auditor', 'spg-peace'] :
-            ['ssg-president', 'ssg-vp-jhs', 'ssg-vp-shs', 'ssg-secretary-jhs', 'ssg-secretary-shs', 'ssg-treasurer-jhs', 'ssg-treasurer-shs', 'ssg-auditor-jhs', 'ssg-auditor-shs', 'ssg-peace', 'ssg-internalPio', 'ssg-externalPio'];
-        
-        const formData = new FormData(document.getElementById('ballot-form'));
-        const missingPositions = [];
-        
-        requiredPositions.forEach(pos => {
-            const value = formData.get(pos);
-            if (!value) {
-                const displayName = pos.replace(/spg-|ssg-|(-jhs|-shs)/g, '').replace(/([A-Z])/g, ' $1').trim();
-                missingPositions.push(displayName.charAt(0).toUpperCase() + displayName.slice(1));
-            }
-        });
-        
-        return { isValid: missingPositions.length === 0, missing: missingPositions };
-    }
-
-    function showIncompleteVoteModal() {
-        const validation = validateBallot();
-        if (!validation.isValid) {
-            const modal = document.createElement('div');
-            modal.id = 'incomplete-vote-modal';
-            modal.className = 'fixed inset-0 bg-black/70 flex items-center justify-center z-[9998]';
-            modal.innerHTML = `
-                <div class="bg-white rounded-3xl p-10 max-w-md text-center shadow-2xl">
-                    <div class="text-5xl mb-6">⚠️</div>
-                    <h2 class="text-2xl font-bold text-red-800 mb-4">Incomplete Ballot</h2>
-                    <p class="text-slate-700 mb-6">You still have lacking votes. Please check the positions below and select your choices or abstain:</p>
-                    <div class="bg-red-50 rounded-2xl p-4 mb-6 text-left">
-                        <ul class="space-y-2">
-                            ${validation.missing.map(pos => `<li class="text-slate-700">• ${pos}</li>`).join('')}
-                        </ul>
-                    </div>
-                    <p class="text-slate-600 mb-8 font-semibold">Click abstain if you decide not to vote for any position.</p>
-                    <div class="flex gap-4">
-                        <button onclick="document.getElementById('incomplete-vote-modal').remove()" class="flex-1 px-6 py-3 bg-slate-300 text-slate-800 font-semibold rounded-2xl hover:bg-slate-400 transition">
-                            Go Back & Review
-                        </button>
-                        <button onclick="document.getElementById('incomplete-vote-modal').remove()" class="flex-1 px-6 py-3 bg-green-600 text-white font-semibold rounded-2xl hover:bg-green-700 transition">
-                            Got It!
-                        </button>
-                    </div>
-                </div>
-            `;
-            document.body.appendChild(modal);
-            return false;
-        }
-        return true;
-    }
-
     async function submitVote(e) {
         e.preventDefault();
         if (!selectedGrade) return alert("Please select your grade level.");
-        
-        // Check for incomplete ballot
-        if (!showIncompleteVoteModal()) {
-            return;
-        }
 
         const formData = new FormData(document.getElementById('ballot-form'));
         const isSPG = selectedGrade <= 6;
