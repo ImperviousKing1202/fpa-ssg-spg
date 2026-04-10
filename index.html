@@ -168,6 +168,7 @@
             <button onclick="switchAdminTab('ssg')" id="tab-ssg" class="px-6 py-2 bg-red-800 text-white rounded-3xl font-medium">SSG Results</button>
             <button onclick="switchAdminTab('spg')" id="tab-spg" class="px-6 py-2 bg-slate-200 text-slate-700 rounded-3xl font-medium hover:bg-slate-300">SPG Results</button>
             <button onclick="switchAdminTab('voters')" id="tab-voters" class="px-6 py-2 bg-slate-200 text-slate-700 rounded-3xl font-medium hover:bg-slate-300">Voter List</button>
+            <button onclick="switchAdminTab('summary')" id="tab-summary" class="px-6 py-2 bg-slate-200 text-slate-700 rounded-3xl font-medium hover:bg-slate-300">SUMMARY</button>
         </div>
         <div id="admin-content" class="p-8"></div>
     </div>
@@ -772,6 +773,7 @@
         document.getElementById('tab-ssg').className = tab === 'ssg' ? 'px-6 py-2 bg-red-800 text-white rounded-3xl font-medium' : 'px-6 py-2 bg-slate-200 text-slate-700 rounded-3xl font-medium hover:bg-slate-300';
         document.getElementById('tab-spg').className = tab === 'spg' ? 'px-6 py-2 bg-amber-500 text-white rounded-3xl font-medium' : 'px-6 py-2 bg-slate-200 text-slate-700 rounded-3xl font-medium hover:bg-slate-300';
         document.getElementById('tab-voters').className = tab === 'voters' ? 'px-6 py-2 bg-blue-600 text-white rounded-3xl font-medium' : 'px-6 py-2 bg-slate-200 text-slate-700 rounded-3xl font-medium hover:bg-slate-300';
+        document.getElementById('tab-summary').className = tab === 'summary' ? 'px-6 py-2 bg-violet-700 text-white rounded-3xl font-medium' : 'px-6 py-2 bg-slate-200 text-slate-700 rounded-3xl font-medium hover:bg-slate-300';
         renderAdminResults();
     }
 
@@ -844,6 +846,190 @@
             }
             
             html += `</div>`;
+            content.innerHTML = html;
+            return;
+        }
+
+        if (currentAdminTab === 'summary') {
+            const visibleCandidates = (list) => (list || []).filter(candidate => {
+                if (!candidate) return false;
+                const name = (candidate.name || '').trim();
+                return !(name.startsWith('[') && name.endsWith(']'));
+            });
+
+            const countScalar = (field, candidateId) =>
+                allVotesData.filter(v => (v?.[field] ?? '') === candidateId).length;
+
+            const countArrayIncludes = (field, candidateId) =>
+                allVotesData.filter(v => Array.isArray(v?.[field]) && v[field].includes(candidateId)).length;
+
+            const countGradeRepsIncludes = (candidateId) =>
+                allVotesData.filter(v => Array.isArray(v?.gradeReps) && v.gradeReps.includes(candidateId)).length;
+
+            const renderLines = (lines) =>
+                `<div class="space-y-2">${lines.map(l => `<div class="flex items-start justify-between gap-6"><div class="text-slate-800">${l.label}</div><div class="font-bold text-slate-900 tabular-nums">${l.count}</div></div>`).join('')}</div>`;
+
+            const renderSection = (title, lines) => `
+                <div class="bg-white border-2 border-slate-200 rounded-2xl p-6">
+                    <div class="flex items-baseline justify-between gap-4 mb-4">
+                        <h4 class="text-xl font-semibold text-slate-900">${title}</h4>
+                        <div class="text-sm text-slate-500">Total votes: <span class="font-semibold text-slate-700">${allVotesData.length}</span></div>
+                    </div>
+                    ${renderLines(lines)}
+                </div>
+            `;
+
+            const buildCandidateLines = ({ list, countFn, abstainId }) => {
+                const lines = [];
+                visibleCandidates(list).forEach((c) => {
+                    lines.push({ label: `${c.name} -`, count: countFn(c.id) });
+                });
+                if (abstainId) lines.push({ label: `ABSTAIN -`, count: countFn(abstainId) });
+                return lines;
+            };
+
+            let html = `
+                <div class="mb-8">
+                    <h3 class="text-2xl font-semibold mb-2">SUMMARY</h3>
+                    <p class="text-slate-600">All positions summary (SSG + SPG) in one view.</p>
+                </div>
+            `;
+
+            // ===================== SSG =====================
+            html += `<div class="mb-10">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-2xl font-semibold text-red-800">SSG</h3>
+                    <div class="text-sm text-slate-500">Records: <span class="font-semibold text-slate-700">${allVotesData.length}</span></div>
+                </div>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">`;
+
+            // President
+            html += renderSection('President', buildCandidateLines({
+                list: candidatesData.ssg.president,
+                countFn: (id) => countScalar('ssgPresident', id),
+                abstainId: 'abstain:ssg-president'
+            }));
+
+            // VP JHS / SHS
+            html += renderSection('JHS Vice President', buildCandidateLines({
+                list: candidatesData.ssg.vp.jhs,
+                countFn: (id) => countScalar('ssgVpJhs', id),
+                abstainId: 'abstain:ssg-vp-jhs'
+            }));
+            html += renderSection('SHS Vice President', buildCandidateLines({
+                list: candidatesData.ssg.vp.shs,
+                countFn: (id) => countScalar('ssgVpShs', id),
+                abstainId: 'abstain:ssg-vp-shs'
+            }));
+
+            // Secretary / Treasurer / Auditor (JHS + SHS)
+            const split = [
+                { title: 'JHS Secretary', field: 'ssgSecretaryJhs', list: candidatesData.ssg.secretary.jhs, abstain: 'abstain:ssg-secretary-jhs' },
+                { title: 'SHS Secretary', field: 'ssgSecretaryShs', list: candidatesData.ssg.secretary.shs, abstain: 'abstain:ssg-secretary-shs' },
+                { title: 'JHS Treasurer', field: 'ssgTreasurerJhs', list: candidatesData.ssg.treasurer.jhs, abstain: 'abstain:ssg-treasurer-jhs' },
+                { title: 'SHS Treasurer', field: 'ssgTreasurerShs', list: candidatesData.ssg.treasurer.shs, abstain: 'abstain:ssg-treasurer-shs' },
+                { title: 'JHS Auditor', field: 'ssgAuditorJhs', list: candidatesData.ssg.auditor.jhs, abstain: 'abstain:ssg-auditor-jhs' },
+                { title: 'SHS Auditor', field: 'ssgAuditorShs', list: candidatesData.ssg.auditor.shs, abstain: 'abstain:ssg-auditor-shs' }
+            ];
+            split.forEach(({ title, field, list, abstain }) => {
+                html += renderSection(title, buildCandidateLines({
+                    list,
+                    countFn: (id) => countScalar(field, id),
+                    abstainId: abstain
+                }));
+            });
+
+            // Unified positions
+            html += renderSection('Peace Officer', buildCandidateLines({
+                list: candidatesData.ssg.peace,
+                countFn: (id) => countScalar('ssgPeace', id),
+                abstainId: 'abstain:ssg-peace'
+            }));
+            html += renderSection('Internal PIO', buildCandidateLines({
+                list: candidatesData.ssg.internalPio,
+                countFn: (id) => countScalar('ssgInternalPio', id),
+                abstainId: 'abstain:ssg-internalPio'
+            }));
+            html += renderSection('External PIO', buildCandidateLines({
+                list: candidatesData.ssg.externalPio,
+                countFn: (id) => countScalar('ssgExternalPio', id),
+                abstainId: 'abstain:ssg-externalPio'
+            }));
+
+            // Grade Representatives (stored in gradeReps array)
+            Object.keys(candidatesData.ssg.gradeReps).sort((a, b) => Number(a) - Number(b)).forEach((grade) => {
+                const list = candidatesData.ssg.gradeReps[grade];
+                const candidates = visibleCandidates(list);
+                if (!candidates.length) return;
+                html += renderSection(`Grade ${grade} Representatives`, buildCandidateLines({
+                    list,
+                    countFn: (id) => countGradeRepsIncludes(id),
+                    abstainId: `abstain:rep-ssg-${grade}`
+                }));
+            });
+
+            html += `</div></div>`;
+
+            // ===================== SPG =====================
+            html += `<div class="mb-2">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-2xl font-semibold text-amber-600">SPG</h3>
+                    <div class="text-sm text-slate-500">Records: <span class="font-semibold text-slate-700">${allVotesData.length}</span></div>
+                </div>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">`;
+
+            html += renderSection('President', buildCandidateLines({
+                list: candidatesData.spg.main.president,
+                countFn: (id) => countScalar('spgPresident', id),
+                abstainId: 'abstain:spg-president'
+            }));
+            html += renderSection('Vice President', buildCandidateLines({
+                list: candidatesData.spg.main.vp,
+                countFn: (id) => countScalar('spgVp', id),
+                abstainId: 'abstain:spg-vp'
+            }));
+            html += renderSection('Secretary', buildCandidateLines({
+                list: candidatesData.spg.main.secretary,
+                countFn: (id) => countScalar('spgSecretary', id),
+                abstainId: 'abstain:spg-secretary'
+            }));
+            html += renderSection('Treasurer', buildCandidateLines({
+                list: candidatesData.spg.main.treasurer,
+                countFn: (id) => countScalar('spgTreasurer', id),
+                abstainId: 'abstain:spg-treasurer'
+            }));
+            html += renderSection('Auditor', buildCandidateLines({
+                list: candidatesData.spg.main.auditor,
+                countFn: (id) => countScalar('spgAuditor', id),
+                abstainId: 'abstain:spg-auditor'
+            }));
+
+            // SPG PIO and Peace are stored as arrays
+            html += renderSection('PIO', buildCandidateLines({
+                list: candidatesData.spg.main.internalPio,
+                countFn: (id) => countArrayIncludes('spgPio', id),
+                abstainId: 'abstain:spg-internalPio'
+            }));
+            html += renderSection('Peace Officer', buildCandidateLines({
+                list: candidatesData.spg.main.peace,
+                countFn: (id) => countArrayIncludes('spgPeace', id),
+                abstainId: 'abstain:spg-peace'
+            }));
+
+            // Grade Representatives (stored in gradeReps array)
+            Object.keys(candidatesData.spg.gradeReps).sort((a, b) => Number(a) - Number(b)).forEach((grade) => {
+                const list = candidatesData.spg.gradeReps[grade];
+                const candidates = visibleCandidates(list);
+                if (!candidates.length) return;
+                html += renderSection(`Grade ${grade} Representatives`, buildCandidateLines({
+                    list,
+                    countFn: (id) => countGradeRepsIncludes(id),
+                    abstainId: `abstain:rep-spg-${grade}`
+                }));
+            });
+
+            html += `</div></div>`;
+
             content.innerHTML = html;
             return;
         }
