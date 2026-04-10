@@ -1086,8 +1086,112 @@
     }
 
     async function exportToGoogleSheets() {
-        alert("In testing phase, this downloads a CSV file.\nYou can open it directly in Google Sheets.");
-        // (The full export function is in previous message - it works)
+        if (!isAdminUser) return;
+        if (!allVotesData || allVotesData.length === 0) {
+            alert("No vote records to export yet.");
+            return;
+        }
+
+        const pad2 = (n) => String(n).padStart(2, '0');
+        const formatDateForFilename = (d) =>
+            `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}_${pad2(d.getHours())}${pad2(d.getMinutes())}${pad2(d.getSeconds())}`;
+
+        const toIso = (ts) => {
+            if (!ts) return '';
+            // Firestore Timestamp
+            if (typeof ts?.toDate === 'function') return ts.toDate().toISOString();
+            // Already a Date
+            if (ts instanceof Date) return ts.toISOString();
+            // Epoch millis/seconds or string fallback
+            if (typeof ts === 'number') {
+                const ms = ts > 1e12 ? ts : ts * 1000;
+                return new Date(ms).toISOString();
+            }
+            if (typeof ts === 'string') return ts;
+            return '';
+        };
+
+        const csvEscape = (value) => {
+            if (value === null || value === undefined) return '';
+            const s = String(value);
+            // Quote if contains comma, quote, or newline
+            if (/[",\n\r]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
+            return s;
+        };
+
+        const joinArray = (arr) => {
+            if (!Array.isArray(arr)) return '';
+            // Use semicolon to avoid fighting CSV commas
+            return arr.filter((x) => x !== null && x !== undefined && String(x).trim() !== '').join(';');
+        };
+
+        const columns = [
+            'email',
+            'grade',
+            'voteType',
+            'timestamp',
+            // SSG
+            'ssgPresident',
+            'ssgVpJhs',
+            'ssgVpShs',
+            'ssgSecretaryJhs',
+            'ssgSecretaryShs',
+            'ssgTreasurerJhs',
+            'ssgTreasurerShs',
+            'ssgAuditorJhs',
+            'ssgAuditorShs',
+            'ssgPeace',
+            'ssgInternalPio',
+            'ssgExternalPio',
+            // SPG
+            'spgPresident',
+            'spgVp',
+            'spgSecretary',
+            'spgTreasurer',
+            'spgAuditor',
+            'spgPio',
+            'spgPeace',
+            // Shared
+            'gradeReps'
+        ];
+
+        const rows = [];
+        rows.push(columns.map(csvEscape).join(','));
+
+        allVotesData.forEach((vote) => {
+            const grade = Number(vote?.grade ?? '');
+            const voteType = Number.isFinite(grade) ? (grade <= 6 ? 'SPG' : 'SSG') : '';
+            const rowObj = {
+                ...vote,
+                grade,
+                voteType,
+                timestamp: toIso(vote?.timestamp),
+                spgPio: joinArray(vote?.spgPio),
+                spgPeace: joinArray(vote?.spgPeace),
+                gradeReps: joinArray(vote?.gradeReps)
+            };
+
+            const row = columns.map((key) => csvEscape(rowObj[key])).join(',');
+            rows.push(row);
+        });
+
+        // Add UTF-8 BOM so Excel/Sheets handle UTF-8 names reliably
+        const csvText = '\uFEFF' + rows.join('\r\n');
+        const blob = new Blob([csvText], { type: 'text/csv;charset=utf-8' });
+
+        const now = new Date();
+        const filename = `fu-elections-votes_${formatDateForFilename(now)}.csv`;
+
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+
+        alert("CSV downloaded. You can upload/open it in Google Sheets.");
     }
 
     async function resetVotes() {
