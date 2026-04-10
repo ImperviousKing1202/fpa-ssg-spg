@@ -637,74 +637,22 @@
         }
     }
 
-    // Voting time window: 1 PM to 5 PM GMT+8
-    function getVotingTimeStatus() {
-        const now = new Date();
-        // Interpret wall-clock time in GMT+8 (Asia/Shanghai)
-        const gmtTime = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Shanghai' }));
-        const hours = gmtTime.getHours();
-        const minutes = gmtTime.getMinutes();
-        const seconds = gmtTime.getSeconds();
-        
-        const votingStart = 13; // 1 PM
-        const votingEnd = 17; // 5 PM
-        
-        const currentTimeInMinutes = hours * 60 + minutes + seconds / 60;
-        const startTimeInMinutes = votingStart * 60;
-        const endTimeInMinutes = votingEnd * 60;
-        
-        if (currentTimeInMinutes < startTimeInMinutes) {
-            const timeUntilStart = startTimeInMinutes - currentTimeInMinutes;
-            const hoursLeft = Math.floor(timeUntilStart / 60);
-            const minsLeft = Math.floor(timeUntilStart % 60);
-            return { status: 'not-started', message: `Voting starts in ${hoursLeft}h ${minsLeft}m`, timeLeft: null };
-        } else if (currentTimeInMinutes >= endTimeInMinutes) {
-            return { status: 'ended', message: 'Voting has ended', timeLeft: null };
-        } else {
-            const timeLeft = endTimeInMinutes - currentTimeInMinutes;
-            return { status: 'active', message: null, timeLeft };
-        }
-    }
-
+    // Voting period is open (no client-side time window; schedule is informational only)
     function updateVotingTimer() {
-        const status = getVotingTimeStatus();
         const statusEl = document.getElementById('voting-status');
         const countdownEl = document.getElementById('countdown-timer');
         const countdownBox = document.getElementById('countdown-box');
         const gradeSelect = document.getElementById('grade-select');
-        const submitBtn = document.querySelector('button[type="submit"]');
-        
-        if (status.status === 'not-started') {
-            statusEl.textContent = `⏳ ${status.message}`;
-            statusEl.className = 'text-center font-semibold mt-6 text-lg text-orange-600';
-            if (gradeSelect) gradeSelect.disabled = true;
-            if (submitBtn) submitBtn.disabled = true;
-            countdownBox.style.opacity = '0.6';
-        } else if (status.status === 'ended') {
-            statusEl.textContent = '❌ Voting has ended';
-            statusEl.className = 'text-center font-semibold mt-6 text-lg text-red-600';
-            if (gradeSelect) gradeSelect.disabled = true;
-            if (submitBtn) submitBtn.disabled = true;
-            countdownBox.style.opacity = '0.6';
-            countdownEl.textContent = '00h 00m 00s';
-        } else if (status.status === 'active') {
-            statusEl.textContent = '✅ Voting is now active';
-            statusEl.className = 'text-center font-semibold mt-6 text-lg text-green-600';
-            if (gradeSelect) gradeSelect.disabled = false;
-            if (submitBtn) submitBtn.disabled = false;
-            countdownBox.style.opacity = '1';
-            
-            const timeLeft = status.timeLeft;
-            const hours = Math.floor(timeLeft / 60);
-            const minutes = Math.floor(timeLeft % 60);
-            const seconds = Math.floor((timeLeft % 1) * 60);
-            countdownEl.textContent = `${hours.toString().padStart(2, '0')}h ${minutes.toString().padStart(2, '0')}m ${seconds.toString().padStart(2, '0')}s`;
-        }
-    }
+        const submitBtn = document.querySelector('#ballot-form button[type="submit"]');
+        if (!statusEl || !countdownEl || !countdownBox) return;
 
-    // Start timer updates
-    setInterval(updateVotingTimer, 1000);
-    updateVotingTimer();
+        statusEl.textContent = '✅ Voting is now active';
+        statusEl.className = 'text-center font-semibold mt-6 text-lg text-green-600';
+        if (gradeSelect) gradeSelect.disabled = false;
+        if (submitBtn) submitBtn.disabled = false;
+        countdownBox.style.opacity = '1';
+        countdownEl.textContent = 'Open';
+    }
 
     function validateBallot() {
         const isSPG = selectedGrade <= 6;
@@ -762,15 +710,6 @@
     async function submitVote(e) {
         e.preventDefault();
         if (!selectedGrade) return alert("Please select your grade level.");
-        
-        // Check voting time window
-        const timeStatus = getVotingTimeStatus();
-        if (timeStatus.status !== 'active') {
-            alert(timeStatus.status === 'not-started' ? 
-                `Voting has not started yet. ${timeStatus.message}` : 
-                'Voting has ended. You cannot submit votes anymore.');
-            return;
-        }
         
         // Check for incomplete ballot
         if (!showIncompleteVoteModal()) {
@@ -1267,6 +1206,9 @@
     window.resetVotes = resetVotes;
     window.loadBallot = loadBallot;
     window.submitVote = submitVote;
+
+    setInterval(updateVotingTimer, 1000);
+    updateVotingTimer();
 
     console.log('%c✅ FU Elections - All Positions Placeholders Ready!', 'color:#7f1d1d;font-weight:bold');
 </script>
