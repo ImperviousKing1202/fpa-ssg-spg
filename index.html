@@ -574,14 +574,19 @@
         // Grade Reps for next grade (clamp Grade 12 to vote for Grade 12 reps)
         const repsGrade = nextGrade > 12 ? 12 : nextGrade;
         if (repsGrade >= 4 && repsGrade <= 12) {
-            const repsInputType = isSPG ? 'radio' : 'checkbox';
-            const repsMaxText = isSPG ? '' : ' <span class="text-slate-500">(max 2)</span>';
-            const repsName = `rep-${isSPG ? 'spg' : 'ssg'}-${repsGrade}`;
+            // Grade 6: SPG executive positions, but Grade 7 reps come from the SSG (JHS) slate
+            const grade6SpgWithSsgReps = selectedGrade === 6;
+            const spgRepList = candidatesData.spg.gradeReps[repsGrade] || [];
+            const ssgRepList = candidatesData.ssg.gradeReps[repsGrade] || [];
+            const repCandidates = grade6SpgWithSsgReps ? ssgRepList : (isSPG ? spgRepList : ssgRepList);
+            const repsInputType = isSPG && !grade6SpgWithSsgReps ? 'radio' : 'checkbox';
+            const repsMaxText = isSPG && !grade6SpgWithSsgReps ? '' : ' <span class="text-slate-500">(max 2)</span>';
+            const repsName = grade6SpgWithSsgReps ? `rep-ssg-${repsGrade}` : `rep-${isSPG ? 'spg' : 'ssg'}-${repsGrade}`;
             html += `
             <div>
                 <h3 class="text-xl font-medium mb-4">Grade ${repsGrade} Representatives${repsMaxText}</h3>
                 <div id="reps-container" class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    ${(isSPG ? candidatesData.spg.gradeReps[repsGrade] : candidatesData.ssg.gradeReps[repsGrade] || [])
+                    ${repCandidates
                         .filter(c => c !== null)
                         .map(c => createCard(c, repsInputType, repsName, true))
                         .join('')}
