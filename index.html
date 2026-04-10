@@ -152,12 +152,9 @@
 <!-- ADMIN PANEL -->
 <div id="admin-modal" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center z-[9999]">
     <div class="bg-white rounded-3xl w-full max-w-5xl max-h-[92vh] overflow-auto">
-        <div class="p-8 border-b sticky top-0 bg-white flex flex-col gap-4 md:flex-row md:justify-between items-start md:items-center">
+        <div class="p-8 border-b sticky top-0 bg-white flex justify-between items-center">
             <h2 class="text-3xl font-semibold">Live Election Results – Admin</h2>
-            <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
-                <button onclick="toggleVotingOverride()" id="override-btn" class="px-6 py-2 bg-blue-600 text-white rounded-3xl flex items-center gap-x-2 text-sm">
-                    <i class="fa-solid fa-flask"></i> Enable Countdown Override
-                </button>
+            <div class="flex gap-3">
                 <button onclick="resetVotes()" class="px-6 py-2 bg-red-600 text-white rounded-3xl flex items-center gap-x-2 text-sm">
                     <i class="fa-solid fa-trash"></i> Reset Votes
                 </button>
@@ -199,6 +196,8 @@
     let selectedGrade = null;
     let isAdminUser = false;
     let unsubscribeResults = null;
+    let allVotesData = [];
+    let currentAdminTab = 'ssg';
 
     // Allow "click again to unselect" behavior for radios.
     // Native radios can't be unchecked by clicking them again, so we emulate it
@@ -640,11 +639,7 @@
 
     // Voting time window: 1 PM to 5 PM GMT+8
     function getVotingTimeStatus() {
-        if (adminVotingOverride) {
-            return { status: 'active', message: null, timeLeft: 0, override: true };
-        }
 
-        const now = new Date();
         // Simulate GMT+8 by adjusting the current time
         const gmtTime = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Shanghai' }));
         const hours = gmtTime.getHours();
@@ -693,22 +688,17 @@
             countdownBox.style.opacity = '0.6';
             countdownEl.textContent = '00h 00m 00s';
         } else if (status.status === 'active') {
-            if (status.override) {
-                statusEl.textContent = '✅ Admin override active: voting countdown bypassed for testing';
-                statusEl.className = 'text-center font-semibold mt-6 text-lg text-blue-600';
-                countdownEl.textContent = 'TEST MODE';
-            } else {
-                statusEl.textContent = '✅ Voting is now active';
-                statusEl.className = 'text-center font-semibold mt-6 text-lg text-green-600';
-                const timeLeft = status.timeLeft;
-                const hours = Math.floor(timeLeft / 60);
-                const minutes = Math.floor(timeLeft % 60);
-                const seconds = Math.floor((timeLeft % 1) * 60);
-                countdownEl.textContent = `${hours.toString().padStart(2, '0')}h ${minutes.toString().padStart(2, '0')}m ${seconds.toString().padStart(2, '0')}s`;
-            }
+            statusEl.textContent = '✅ Voting is now active';
+            statusEl.className = 'text-center font-semibold mt-6 text-lg text-green-600';
             if (gradeSelect) gradeSelect.disabled = false;
             if (submitBtn) submitBtn.disabled = false;
             countdownBox.style.opacity = '1';
+            
+            const timeLeft = status.timeLeft;
+            const hours = Math.floor(timeLeft / 60);
+            const minutes = Math.floor(timeLeft % 60);
+            const seconds = Math.floor((timeLeft % 1) * 60);
+            countdownEl.textContent = `${hours.toString().padStart(2, '0')}h ${minutes.toString().padStart(2, '0')}m ${seconds.toString().padStart(2, '0')}s`;
         }
     }
 
@@ -868,20 +858,6 @@
 
     let allVotesData = [];
     let currentAdminTab = 'ssg';
-    let adminVotingOverride = false;
-
-    function toggleVotingOverride() {
-        adminVotingOverride = !adminVotingOverride;
-        const overrideBtn = document.getElementById('override-btn');
-        if (adminVotingOverride) {
-            overrideBtn.innerHTML = '<i class="fa-solid fa-eye"></i> Disable Countdown Override';
-            overrideBtn.className = 'px-6 py-2 bg-amber-500 text-white rounded-3xl flex items-center gap-x-2 text-sm';
-        } else {
-            overrideBtn.innerHTML = '<i class="fa-solid fa-flask"></i> Enable Countdown Override';
-            overrideBtn.className = 'px-6 py-2 bg-blue-600 text-white rounded-3xl flex items-center gap-x-2 text-sm';
-        }
-        updateVotingTimer();
-    }
 
     function switchAdminTab(tab) {
         currentAdminTab = tab;
@@ -1292,7 +1268,6 @@
     window.switchAdminTab = switchAdminTab;
     window.exportToGoogleSheets = exportToGoogleSheets;
     window.resetVotes = resetVotes;
-    window.toggleVotingOverride = toggleVotingOverride;
     window.loadBallot = loadBallot;
     window.submitVote = submitVote;
 
