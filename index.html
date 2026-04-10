@@ -639,8 +639,8 @@
 
     // Voting time window: 1 PM to 5 PM GMT+8
     function getVotingTimeStatus() {
-
-        // Simulate GMT+8 by adjusting the current time
+        const now = new Date();
+        // Interpret wall-clock time in GMT+8 (Asia/Shanghai)
         const gmtTime = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Shanghai' }));
         const hours = gmtTime.getHours();
         const minutes = gmtTime.getMinutes();
